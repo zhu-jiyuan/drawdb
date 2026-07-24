@@ -1599,6 +1599,18 @@ export default function ControlPanel({
             showCardinality: !prev.showCardinality,
           })),
       },
+      sketch_mode: {
+        state: settings.sketchMode ? (
+          <i className="bi bi-toggle-on" />
+        ) : (
+          <i className="bi bi-toggle-off" />
+        ),
+        function: () =>
+          setSettings((prev) => ({
+            ...prev,
+            sketchMode: !prev.sketchMode,
+          })),
+      },
       show_relationship_labels: {
         state: settings.showRelationshipLabels ? (
           <i className="bi bi-toggle-on" />

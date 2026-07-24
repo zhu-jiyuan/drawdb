@@ -16,6 +16,7 @@ const defaultSettings = {
   tableWidth: tableWidth,
   showDebugCoordinates: false,
   showComments: false,
+  sketchMode: false,
 };
 
 export const SettingsContext = createContext({

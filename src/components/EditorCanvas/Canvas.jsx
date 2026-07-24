@@ -720,7 +720,10 @@ export default function Canvas() {
   );
 
   return (
-    <div className="grow h-full touch-none" id="canvas">
+    <div
+      className={`grow h-full touch-none ${settings.sketchMode ? "sketch-mode" : ""}`}
+      id="canvas"
+    >
       <div
         className="w-full h-full"
         style={{
@@ -743,6 +746,31 @@ export default function Canvas() {
           className="absolute w-full h-full touch-none"
           viewBox={`${viewBox.left} ${viewBox.top} ${viewBox.width} ${viewBox.height}`}
         >
+          <defs>
+            {/* Displacement filter behind the hand-drawn (sketch) theme */}
+            <filter
+              id="sketch-filter"
+              x="-5%"
+              y="-5%"
+              width="110%"
+              height="110%"
+            >
+              <feTurbulence
+                type="fractalNoise"
+                baseFrequency="0.04"
+                numOctaves="2"
+                seed="7"
+                result="noise"
+              />
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="noise"
+                scale="2.5"
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+            </filter>
+          </defs>
           {settings.showGrid && (
             <>
               <defs>

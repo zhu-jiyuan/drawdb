@@ -245,3 +245,38 @@
   animation: dash-right 1s linear infinite;
   
 }
+
+/* ---- Hand-drawn (Excalidraw-style) canvas theme ---------------------------- */
+
+@font-face {
+  font-family: "Excalifont";
+  src: url("./assets/fonts/Excalifont-Regular.woff2") format("woff2");
+  font-display: swap;
+}
+
+.sketch-mode foreignObject,
+.sketch-mode foreignObject *:not(input):not(select):not(option),
+.sketch-mode svg text {
+  font-family:
+    "Excalifont",
+    "Segoe Print",
+    "Bradley Hand",
+    "KaiTi",
+    "STKaiti",
+    "Kaiti SC",
+    cursive !important;
+}
+
+/* wobbly relationship lines and area/note shapes */
+.sketch-mode path.relationship-path,
+.sketch-mode .sketch-shape {
+  filter: url(#sketch-filter);
+}
+
+/* table cards: slightly wobbled outline, softer shadow */
+.sketch-mode foreignObject > div {
+  filter: url(#sketch-filter);
+}
+.sketch-mode foreignObject {
+  filter: drop-shadow(1px 2px 0px rgba(0, 0, 0, 0.15));
+}

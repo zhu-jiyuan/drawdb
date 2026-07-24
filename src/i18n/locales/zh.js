@@ -47,6 +47,7 @@ const zh = {
     cloud_upload_done: "已上传 {{uploaded}} 张，跳过 {{skipped}} 张（云端更新）",
     cloud_recent_title: "最近项目",
     auto_arrange: "自动整理布局",
+    sketch_mode: "手绘风格",
     cloud_mcp_key_title: "MCP Key",
     cloud_mcp_key_desc:
       "供 AI 助手使用的 API Key（Claude / Codex 通过内置 MCP 服务器连接）。仅授予图表读写权限——不能用于登录，也不能管理 Key。",
