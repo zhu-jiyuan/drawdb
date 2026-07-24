@@ -50,6 +50,10 @@ const en = {
     cloud_upload_local_desc:
       "Upload {{count}} local diagram(s) to the cloud and switch them to cloud storage. A backup zip is downloaded first. If the cloud already has a newer copy of a diagram, the cloud copy wins.",
     cloud_upload_done: "Uploaded {{uploaded}}, skipped {{skipped}} (cloud was newer)",
+    cloud_recent_title: "Recent diagrams",
+    cloud_new_diagram: "New diagram",
+    cloud_no_diagrams: "No diagrams yet — click New diagram to start",
+    cloud_source_local: "Local",
     import_diagram: "Import diagram",
     import_from_source: "Import from SQL",
     export_as: "Export as",

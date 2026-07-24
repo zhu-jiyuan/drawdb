@@ -45,6 +45,10 @@ const zh = {
     cloud_upload_local_desc:
       "将 {{count}} 张本地图表上传到云端并转为云端存储。上传前会先自动下载一份备份。若云端已有更新的副本，以云端为准。",
     cloud_upload_done: "已上传 {{uploaded}} 张，跳过 {{skipped}} 张（云端更新）",
+    cloud_recent_title: "最近项目",
+    cloud_new_diagram: "新建图表",
+    cloud_no_diagrams: "还没有图表，点击「新建图表」开始",
+    cloud_source_local: "本地",
     import_diagram: "导入图表",
     import_from_source: "导入 SQL 源代码",
     export_as: "导出为",

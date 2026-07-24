@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button, Input, Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logo from "../assets/logo_light_160.png";
 import { login } from "../cloud/api";
 import { useCloudAuth } from "../cloud/authContext";
@@ -9,7 +9,6 @@ import { useCloudAuth } from "../cloud/authContext";
 export default function Login() {
   const auth = useCloudAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -17,19 +16,14 @@ export default function Login() {
     document.title = "Log in | drawDB";
   }, []);
 
-  useEffect(() => {
-    if (auth.status === "cloud" && !auth.expired) {
-      navigate("/editor", { replace: true });
-    }
-  }, [auth.status, auth.expired, navigate]);
-
   const handleLogin = async () => {
     if (!password || busy) return;
     setBusy(true);
     try {
       await login(password);
+      // No navigation: Home switches to the recent-diagrams list when the
+      // auth status flips.
       auth.onLoggedIn();
-      navigate("/editor", { replace: true });
     } catch (err) {
       Toast.error(
         err?.response?.status === 429

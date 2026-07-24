@@ -86,7 +86,7 @@ function CloudControls() {
       // clearing the local session is enough either way
     }
     auth.onLoggedOut();
-    window.location.href = "/editor";
+    window.location.href = "/";
   };
 
   const handleMigrate = async () => {

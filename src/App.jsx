@@ -3,10 +3,9 @@ import { useLayoutEffect } from "react";
 import Editor from "./pages/Editor";
 import BugReport from "./pages/BugReport";
 import Templates from "./pages/Templates";
-import LandingPage from "./pages/LandingPage";
+import Home from "./pages/Home";
 import SettingsContextProvider from "./context/SettingsContext";
 import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
 import CloudProvider from "./cloud/CloudProvider";
 
 export default function App() {
@@ -16,11 +15,11 @@ export default function App() {
         <CloudProvider>
           <RestoreScroll />
           <Routes>
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<Home />} />
             <Route path="/editor" element={<Editor />} />
             <Route path="/editor/diagrams/:id" element={<Editor />} />
             <Route path="/editor/templates/:id" element={<Editor />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/login" element={<Home />} />
             <Route path="/bug-report" element={<BugReport />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="*" element={<NotFound />} />
