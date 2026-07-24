@@ -22,6 +22,13 @@ db.version(67)
     });
   });
 
+// Offline cache + outbox for cloud-stored diagrams. Deliberately separate from
+// `diagrams`: Workspace's fetchDiagram prefers local rows, so mirrors living in
+// `diagrams` would shadow newer cloud versions and reroute saves to local.
+db.version(68).stores({
+  cloudMirror: "diagramId",
+});
+
 db.on("populate", (transaction) => {
   transaction.templates.bulkAdd(templateSeeds).catch((e) => console.log(e));
 });

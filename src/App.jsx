@@ -6,21 +6,26 @@ import Templates from "./pages/Templates";
 import LandingPage from "./pages/LandingPage";
 import SettingsContextProvider from "./context/SettingsContext";
 import NotFound from "./pages/NotFound";
+import Login from "./pages/Login";
+import CloudProvider from "./cloud/CloudProvider";
 
 export default function App() {
   return (
     <BrowserRouter>
       <SettingsContextProvider>
-        <RestoreScroll />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/editor" element={<Editor />} />
-          <Route path="/editor/diagrams/:id" element={<Editor />} />
-          <Route path="/editor/templates/:id" element={<Editor />} />
-          <Route path="/bug-report" element={<BugReport />} />
-          <Route path="/templates" element={<Templates />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <CloudProvider>
+          <RestoreScroll />
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/editor" element={<Editor />} />
+            <Route path="/editor/diagrams/:id" element={<Editor />} />
+            <Route path="/editor/templates/:id" element={<Editor />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/bug-report" element={<BugReport />} />
+            <Route path="/templates" element={<Templates />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </CloudProvider>
       </SettingsContextProvider>
     </BrowserRouter>
   );

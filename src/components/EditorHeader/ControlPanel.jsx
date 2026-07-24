@@ -95,7 +95,6 @@ export default function ControlPanel({
   title,
   setTitle,
   lastSaved,
-  setLastSaved,
   toolbarContainer,
 }) {
   const { id: diagramId } = useParams();
@@ -828,44 +827,10 @@ export default function ControlPanel({
     setLayout((prev) => ({ ...prev, dbmlEditor: !prev.dbmlEditor }));
   };
   const save = async () => {
-    if (typeof extensions.cloudSave === "function") {
-      // TODO: dont have blank here have null
-      const isNew = diagramId === 'blank';
-      const newId = isNew ? uuidv4() : diagramId;
-      const diagramData = {
-        diagramId: newId,
-        database,
-        name: title,
-        gistId: gistId ?? "",
-        lastModified: new Date(),
-        tables,
-        references: relationships,
-        notes,
-        areas,
-        pan: transform.pan,
-        zoom: transform.zoom,
-        ...(databases[database].hasEnums && { enums }),
-        ...(databases[database].hasTypes && { types }),
-      };
-      try {
-        await extensions.cloudSave(diagramData, { isNew });
-        if (isNew) {
-          navigate(`/editor/diagrams/${newId}`, { replace: true });
-        }
-        setSaveState(State.SAVED);
-        if (typeof setLastSaved === "function") {
-          setLastSaved(new Date().toLocaleString());
-        }
-      } catch (err) {
-        if (err?.response?.status === 402) {
-          setSaveState(State.NONE);
-          navigate("/checkout?tier=solo_pro");
-          return;
-        }
-        setSaveState(State.ERROR);
-      }
-      return;
-    }
+    // Setting SAVING hands off to Workspace's save(): it knows diagramSource
+    // and handles cloud vs local, new ids, and template routes correctly —
+    // duplicating the cloud call here breaks /editor (no :id param) and
+    // /editor/templates/:id, and bypasses the local-diagram guard.
     setSaveState(State.SAVING);
   };
   const { cloud, local } = useDiagramList();

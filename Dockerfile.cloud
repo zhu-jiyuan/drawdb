@@ -1,0 +1,28 @@
+# Multi-stage build for the personal cloud-sync fork of drawdb.
+# Stage 1 builds the static frontend; stage 2 runs the Fastify API and serves it.
+
+ARG NPM_REGISTRY=https://registry.npmjs.org
+
+# ---- Stage 1: build the frontend ------------------------------------------
+FROM node:20-alpine AS frontend
+ARG NPM_REGISTRY
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --registry=${NPM_REGISTRY}
+COPY . .
+# The upstream Vite build needs extra heap headroom.
+ENV NODE_OPTIONS=--max-old-space-size=4096
+RUN npm run build
+
+# ---- Stage 2: server runtime ----------------------------------------------
+FROM node:20-alpine AS runtime
+ARG NPM_REGISTRY
+WORKDIR /app/server
+COPY server/package*.json ./
+RUN npm ci --omit=dev --registry=${NPM_REGISTRY}
+COPY server/*.js server/*.sql ./
+COPY --from=frontend /app/dist /app/dist
+ENV STATIC_DIR=/app/dist
+ENV NODE_ENV=production
+EXPOSE 3001
+CMD ["node", "index.js"]
