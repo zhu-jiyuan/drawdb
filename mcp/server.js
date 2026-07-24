@@ -175,7 +175,7 @@ export function buildMcpServer(client, { editorBase }) {
     {
       title: "Create diagram",
       description:
-        "Create a new database diagram. Provide tables (each with fields) and optional foreign-key relationships; the server generates ids and auto-lays-out the tables on a grid. Field `type` strings should match the chosen SQL dialect (e.g. INT, BIGINT, VARCHAR with size, TEXT, TIMESTAMP, BOOLEAN). Returns the new diagramId, editor URL, and version. " +
+        "Create a new database diagram. Provide tables (each with fields) and optional foreign-key relationships; the server generates ids and auto-lays-out tables by foreign-key hierarchy (referenced/parent tables left, children right, height-aware, no overlaps). Field `type` strings should match the chosen SQL dialect (e.g. INT, BIGINT, VARCHAR with size, TEXT, TIMESTAMP, BOOLEAN). Returns the new diagramId, editor URL, and version. " +
         EDITOR_NOTE,
       inputSchema: {
         name: z.string().describe("Diagram title."),
@@ -242,6 +242,12 @@ export function buildMcpServer(client, { editorBase }) {
           .array(z.string())
           .optional()
           .describe("Relationship names to remove."),
+        auto_layout: z
+          .boolean()
+          .optional()
+          .describe(
+            "Re-arrange ALL tables by foreign-key hierarchy (parents left, children right, no overlaps). Applied after the other operations. Overwrites manual positioning.",
+          ),
       },
     },
     async (args) => {
