@@ -235,6 +235,15 @@ export function registerAuthRoutes(app) {
   app.post("/api/auth/login", login);
   app.post("/api/auth/logout", logout);
   app.get("/api/auth/me", me);
+  // Unauthenticated liveness/readiness probe (also checks DB connectivity).
+  app.get("/api/health", async (_request, reply) => {
+    try {
+      await pool.query("SELECT 1");
+      return { ok: true };
+    } catch {
+      return reply.code(503).send({ ok: false });
+    }
+  });
 }
 
 // ---- background cleanup ----------------------------------------------------
