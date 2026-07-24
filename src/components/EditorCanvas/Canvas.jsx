@@ -480,10 +480,12 @@ export default function Canvas() {
     const pad = 40;
     const contentW = maxX - minX + pad * 2;
     const contentH = maxY - minY + pad * 2;
-    const zoom = Math.min(
-      1,
-      canvas.width / contentW,
-      canvas.height / contentH,
+    // Fit to the viewport, but don't shrink below 45% — a big schema fitted
+    // whole would be an unreadable speck; keep tables legible and let the user
+    // pan to the rest (one-finger drag works on touch).
+    const zoom = Math.max(
+      0.45,
+      Math.min(1, canvas.width / contentW, canvas.height / contentH),
     );
     // transform.pan is the diagram point shown at the viewport CENTER
     // (viewBox.left = pan.x - viewBoxSize/2), so center on the content's

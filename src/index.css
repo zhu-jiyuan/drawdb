@@ -267,16 +267,23 @@
     cursive !important;
 }
 
-/* wobbly relationship lines and area/note shapes */
-.sketch-mode path.relationship-path,
-.sketch-mode .sketch-shape {
-  filter: url(#sketch-filter);
+/* Hand-drawn wobble uses an SVG displacement filter. Mobile GPUs render it
+   badly on thin strokes (relationship lines look broken / "drifting") and it's
+   costly, so the wobble is desktop-only (fine pointer + real hover); touch
+   devices keep just the hand-drawn font. */
+@media (hover: hover) and (pointer: fine) {
+  .sketch-mode path.relationship-path,
+  .sketch-mode .sketch-shape {
+    filter: url(#sketch-filter);
+  }
+  .sketch-mode foreignObject > div {
+    filter: url(#sketch-filter);
+  }
 }
 
-/* table cards in sketch mode: wobbled outline, single soft sketch shadow
+/* table cards in sketch mode: rounded outline + single soft sketch shadow
    (neutralize the heavy tailwind drop-shadow so it reads hand-drawn) */
 .sketch-mode foreignObject > div {
-  filter: url(#sketch-filter);
   border-radius: 6px;
 }
 .sketch-mode foreignObject.drop-shadow-lg {
