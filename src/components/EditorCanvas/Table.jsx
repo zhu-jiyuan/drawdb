@@ -56,6 +56,9 @@ export default function Table({
   setLinkingLine,
 }) {
   const [hoveredField, setHoveredField] = useState(null);
+  // In-place editing on the canvas: table title / a field's name
+  const [editingName, setEditingName] = useState(false);
+  const [editingFieldId, setEditingFieldId] = useState(null);
   const { layout } = useLayout();
   const {
     database,
@@ -65,6 +68,7 @@ export default function Table({
     deleteTable,
     deleteField,
     updateTable,
+    updateField,
   } = useDiagram();
   const { setUndoStack, setRedoStack } = useUndoRedo();
   const { settings } = useSettings();
@@ -191,6 +195,63 @@ export default function Table({
     addTable({ table: duplicated });
   };
 
+  const commitTableName = (value) => {
+    setEditingName(false);
+    const name = value.trim();
+    if (!name || name === tableData.name) return;
+    const oldName = tableData.name;
+    updateTable(tableData.id, { name });
+    setUndoStack((prev) => [
+      ...prev,
+      {
+        action: Action.EDIT,
+        element: ObjectType.TABLE,
+        component: "self",
+        tid: tableData.id,
+        undo: { name: oldName },
+        redo: { name },
+        message: t("edit_table", { tableName: name, extra: "[name]" }),
+      },
+    ]);
+    setRedoStack([]);
+  };
+
+  const commitFieldName = (fieldData, value) => {
+    setEditingFieldId(null);
+    const name = value.trim();
+    if (!name || name === fieldData.name) return;
+    const oldName = fieldData.name;
+    updateField(tableData.id, fieldData.id, { name });
+    setUndoStack((prev) => [
+      ...prev,
+      {
+        action: Action.EDIT,
+        element: ObjectType.TABLE,
+        component: "field",
+        tid: tableData.id,
+        fid: fieldData.id,
+        undo: { name: oldName },
+        redo: { name },
+        message: t("edit_table", { tableName: tableData.name, extra: "[field]" }),
+      },
+    ]);
+    setRedoStack([]);
+  };
+
+  // Shared props for the in-place inputs: keep pointer/dblclick events from
+  // dragging the table or bubbling up to the sheet-opening handler.
+  const inlineInputProps = (commit, cancel) => ({
+    autoFocus: true,
+    onPointerDown: (e) => e.stopPropagation(),
+    onDoubleClick: (e) => e.stopPropagation(),
+    onClick: (e) => e.stopPropagation(),
+    onBlur: (e) => commit(e.target.value),
+    onKeyDown: (e) => {
+      if (e.key === "Enter") e.target.blur();
+      if (e.key === "Escape") cancel();
+    },
+  });
+
   // Always open the edit side sheet, sidebar visible or not — double-clicking
   // a table should edit it in place, not just scroll the side panel.
   // editFromCanvas distinguishes this from the panel's accordion, which sets
@@ -270,8 +331,25 @@ export default function Table({
             <div
               className={`overflow-hidden font-bold h-[40px] flex justify-between items-center gap-2`}
             >
-              <div className="px-3 overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1">
-                {tableData.name}
+              <div
+                className="px-3 overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1"
+                onDoubleClick={(e) => {
+                  if (layout.readOnly) return;
+                  e.stopPropagation();
+                  setEditingName(true);
+                }}
+              >
+                {editingName ? (
+                  <input
+                    defaultValue={tableData.name}
+                    className="w-full bg-transparent border border-blue-400 rounded px-1 outline-none font-bold"
+                    {...inlineInputProps(commitTableName, () =>
+                      setEditingName(false),
+                    )}
+                  />
+                ) : (
+                  tableData.name
+                )}
               </div>
               <div className="hidden group-hover:flex items-center shrink-0 pe-2">
                 <ButtonGroup
@@ -562,8 +640,26 @@ export default function Table({
                 }));
               }}
             />
-            <span className="overflow-hidden text-ellipsis whitespace-nowrap">
-              {fieldData.name}
+            <span
+              className="overflow-hidden text-ellipsis whitespace-nowrap"
+              onDoubleClick={(e) => {
+                if (layout.readOnly) return;
+                e.stopPropagation();
+                setEditingFieldId(fieldData.id);
+              }}
+            >
+              {editingFieldId === fieldData.id ? (
+                <input
+                  defaultValue={fieldData.name}
+                  className="w-full bg-transparent border border-blue-400 rounded px-1 outline-none"
+                  {...inlineInputProps(
+                    (value) => commitFieldName(fieldData, value),
+                    () => setEditingFieldId(null),
+                  )}
+                />
+              ) : (
+                fieldData.name
+              )}
             </span>
           </div>
           <div className="text-zinc-400">
