@@ -20,4 +20,10 @@ module.exports = {
     "react/prop-types": 0,
     "react-refresh/only-export-components": "off",
   },
+  overrides: [
+    {
+      files: ["server/**/*.js"],
+      env: { node: true, browser: false },
+    },
+  ],
 };
