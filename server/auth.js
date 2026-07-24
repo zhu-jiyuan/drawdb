@@ -117,48 +117,61 @@ function sweepFailures() {
 
 // ---- session lookup (preHandler for protected routes) ----------------------
 
+// Validates an `Authorization: Bearer <key>` header against the UI-managed key
+// in mcp_keys and, if set, the MCP_KEY env var. Also used by the /mcp endpoint.
+// Returns {ok:true} or {ok:false, status: 401|429}.
+export async function verifyMcpBearer(request) {
+  const authHeader = request.headers.authorization;
+  if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
+    return { ok: false, status: 401 };
+  }
+  if (isRateLimited(request.ip)) {
+    return { ok: false, status: 429 };
+  }
+  const key = authHeader.slice("Bearer ".length);
+  const keyHash = sha256Hex(key);
+
+  if (MCP_KEY && crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY))) {
+    return { ok: true }; // env-configured key (compose/simple deployments)
+  }
+
+  const { rows } = await pool.query(
+    "SELECT key_hash, last_used_at FROM mcp_keys WHERE id = 1",
+  );
+  if (
+    rows.length === 1 &&
+    crypto.timingSafeEqual(
+      Buffer.from(keyHash, "hex"),
+      Buffer.from(rows[0].key_hash, "hex"),
+    )
+  ) {
+    const lastUsed = rows[0].last_used_at
+      ? new Date(rows[0].last_used_at).getTime()
+      : 0;
+    if (Date.now() - lastUsed > SLIDING_REFRESH_MS) {
+      pool
+        .query("UPDATE mcp_keys SET last_used_at = now() WHERE id = 1")
+        .catch((err) => request.log.warn({ err }, "mcp key touch failed"));
+    }
+    return { ok: true }; // authenticated via UI-managed MCP key
+  }
+
+  recordFailure(request.ip);
+  return { ok: false, status: 401 };
+}
+
 export async function requireSession(request, reply) {
   // API-key path: presence of an Authorization header selects it explicitly,
-  // so a bad key never falls through to the cookie flow. Valid keys are the
-  // UI-managed one in the mcp_keys table and, if set, the MCP_KEY env var.
+  // so a bad key never falls through to the cookie flow.
   const authHeader = request.headers.authorization;
   if (typeof authHeader === "string" && authHeader.length > 0) {
-    if (!authHeader.startsWith("Bearer ")) {
-      return reply.code(401).send({ error: "unauthorized" });
+    const v = await verifyMcpBearer(request);
+    if (!v.ok) {
+      return reply
+        .code(v.status)
+        .send({ error: v.status === 429 ? "too_many_attempts" : "unauthorized" });
     }
-    if (isRateLimited(request.ip)) {
-      return reply.code(429).send({ error: "too_many_attempts" });
-    }
-    const key = authHeader.slice("Bearer ".length);
-    const keyHash = sha256Hex(key);
-
-    if (MCP_KEY && crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY))) {
-      return; // env-configured key (compose/simple deployments)
-    }
-
-    const { rows } = await pool.query(
-      "SELECT key_hash, last_used_at FROM mcp_keys WHERE id = 1",
-    );
-    if (
-      rows.length === 1 &&
-      crypto.timingSafeEqual(
-        Buffer.from(keyHash, "hex"),
-        Buffer.from(rows[0].key_hash, "hex"),
-      )
-    ) {
-      const lastUsed = rows[0].last_used_at
-        ? new Date(rows[0].last_used_at).getTime()
-        : 0;
-      if (Date.now() - lastUsed > SLIDING_REFRESH_MS) {
-        pool
-          .query("UPDATE mcp_keys SET last_used_at = now() WHERE id = 1")
-          .catch((err) => request.log.warn({ err }, "mcp key touch failed"));
-      }
-      return; // authenticated via UI-managed MCP key
-    }
-
-    recordFailure(request.ip);
-    return reply.code(401).send({ error: "unauthorized" });
+    return;
   }
 
   return checkCookieSession(request, reply);

@@ -12,6 +12,7 @@ import {
   startSessionCleanup,
 } from "./auth.js";
 import { registerDiagramRoutes } from "./diagrams.js";
+import { registerMcpHttp } from "./mcp-http.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +48,7 @@ async function main() {
   registerAuthRoutes(app);
   registerMcpKeyRoutes(app);
   registerDiagramRoutes(app);
+  registerMcpHttp(app, { port: PORT });
 
   // Static SPA serving (optional). STATIC_DIR is resolved relative to this file.
   const staticDir = resolve(__dirname, process.env.STATIC_DIR || "../dist");

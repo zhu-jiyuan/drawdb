@@ -17,6 +17,11 @@ RUN npm run build
 # ---- Stage 2: server runtime ----------------------------------------------
 FROM node:20-alpine AS runtime
 ARG NPM_REGISTRY
+# MCP package: the server imports ../mcp for the /mcp Streamable HTTP endpoint.
+WORKDIR /app/mcp
+COPY mcp/package*.json ./
+RUN npm ci --omit=dev --registry=${NPM_REGISTRY}
+COPY mcp/*.js ./
 WORKDIR /app/server
 COPY server/package*.json ./
 RUN npm ci --omit=dev --registry=${NPM_REGISTRY}

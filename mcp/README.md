@@ -16,7 +16,32 @@
 
 ## 安装配置
 
-### Claude Code
+有两种接入方式,任选其一。Key 在网页首页「MCP Key」按钮里生成。
+
+### 方式一:HTTP(推荐,无需本地安装任何东西)
+
+服务端自带 MCP 端点 `https://drawdb.mpga.me/mcp`,任何机器直接连:
+
+**Claude Code:**
+
+```bash
+claude mcp add --transport http --scope user drawdb https://drawdb.mpga.me/mcp \
+  --header "Authorization: Bearer <KEY>"
+```
+
+**Codex CLI**(`~/.codex/config.toml`,Key 放环境变量避免明文):
+
+```toml
+[mcp_servers.drawdb]
+transport = { type = "streamable_http", url = "https://drawdb.mpga.me/mcp" }
+bearer_token_env_var = "DRAWDB_MCP_KEY"
+```
+
+然后在 shell 配置里 `export DRAWDB_MCP_KEY=<KEY>`。
+
+### 方式二:stdio(本地进程,适合离线/内网调试)
+
+#### Claude Code
 
 ```bash
 claude mcp add drawdb --env DRAWDB_MCP_KEY=<KEY> -- node /home/peter/dev/drawsql/mcp/index.js
