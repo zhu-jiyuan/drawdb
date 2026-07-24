@@ -273,27 +273,75 @@
   filter: url(#sketch-filter);
 }
 
-/* table cards: slightly wobbled outline, softer shadow */
+/* table cards in sketch mode: wobbled outline, single soft sketch shadow
+   (neutralize the heavy tailwind drop-shadow so it reads hand-drawn) */
 .sketch-mode foreignObject > div {
   filter: url(#sketch-filter);
+  border-radius: 6px;
 }
-.sketch-mode foreignObject {
-  filter: drop-shadow(1px 2px 0px rgba(0, 0, 0, 0.15));
+.sketch-mode foreignObject.drop-shadow-lg {
+  filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.12));
+}
+body[theme-mode="dark"] .sketch-mode foreignObject.drop-shadow-lg {
+  filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.4));
 }
 
-/* ---- Excalidraw-style app skin --------------------------------------------- */
+/* ---- Excalidraw-style app skin (whole UI, not just the canvas) ------------- */
 
-/* Excalidraw's violet as the app-wide accent, replacing semi's blue */
-body {
-  --semi-color-primary: #6965db;
-  --semi-color-primary-hover: #5b57d1;
-  --semi-color-primary-active: #4a47b1;
-  --semi-color-focus-border: #6965db;
-  --semi-color-link: #6965db;
-  --semi-color-link-hover: #5b57d1;
+:root {
+  --excal-violet: #6965db;
+  --excal-violet-hover: #5b57d1;
+  --excal-violet-active: #4a47b1;
+  --excal-radius: 8px;
+}
+
+/* Excalidraw's violet as the app-wide accent, replacing semi's blue.
+   semi derives --semi-color-primary (and drawdb's custom accents) from the
+   --semi-blue-* rgb triples, so overriding those at the same specificity semi
+   uses (body[theme-mode=...]) — and later in the cascade — recolors every
+   primary button, link, focus ring, and selected state in one place. */
+body[theme-mode="light"],
+body[theme-mode="dark"] {
+  --semi-blue-5: 105, 101, 219; /* #6965db */
+  --semi-blue-6: 91, 87, 209; /* #5b57d1 */
+  --semi-blue-4: 130, 126, 228;
+  --semi-blue-7: 74, 71, 177;
+  --semi-color-primary: var(--excal-violet);
+  --semi-color-primary-hover: var(--excal-violet-hover);
+  --semi-color-primary-active: var(--excal-violet-active);
+  --semi-color-focus-border: var(--excal-violet);
+  --semi-color-link: var(--excal-violet);
+  --semi-color-link-hover: var(--excal-violet-hover);
   --semi-color-primary-light-default: #f1f0ff;
   --semi-color-primary-light-hover: #e3e2fe;
   --semi-color-primary-light-active: #d7d5ff;
+}
+
+/* Excalidraw uses a soft rounded sans (Assistant) for chrome; approximate it
+   with a rounded system stack — the hand-drawn font stays canvas-only */
+body,
+.semi-button,
+.semi-input,
+.semi-select,
+.semi-modal,
+.semi-dropdown,
+.semi-navigation {
+  font-family:
+    "Nunito", "Assistant", ui-rounded, "Segoe UI", system-ui, -apple-system,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+/* Rounded, island-like controls throughout */
+.semi-button,
+.semi-input-wrapper,
+.semi-select,
+.semi-inputnumber {
+  border-radius: var(--excal-radius) !important;
+}
+.semi-modal-content,
+.semi-dropdown-menu,
+.semi-popover-content {
+  border-radius: 12px !important;
 }
 
 /* Floating "island" chrome, like Excalidraw's panels */
@@ -310,10 +358,7 @@ body[theme-mode="dark"] .editor-toolbar > div {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* selection highlight in Excalidraw violet on the canvas */
-.sketch-mode .border-blue-500 {
-  border-color: #6965db !important;
-}
-.sketch-mode .hover\:border-blue-500:hover {
-  border-color: #6965db !important;
+/* semi-ui Switch "on" state and slider in violet (menu toggles) */
+.semi-switch-checked {
+  background-color: var(--excal-violet) !important;
 }

@@ -20,6 +20,17 @@ import logo from "../assets/logo_light_160.png";
 // recent-diagrams list. The stock landing page is unrouted.
 export default function Home() {
   const auth = useCloudAuth();
+  // The editor mounts its own SettingsContext, so the dark-mode choice it
+  // persists isn't reflected by the app-level provider wrapping this page.
+  // Apply the persisted theme directly so the homepage matches the editor.
+  useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("settings") || "{}");
+      if (saved.mode) document.body.setAttribute("theme-mode", saved.mode);
+    } catch {
+      // ignore malformed settings
+    }
+  }, []);
   if (auth.status !== "cloud" || auth.expired) return <Login />;
   return <RecentDiagrams />;
 }
@@ -74,7 +85,7 @@ function RecentDiagrams() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-100 p-6">
+    <div className="min-h-screen bg-[var(--semi-color-bg-1)] text-[var(--semi-color-text-0)] p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
           <img src={logo} alt="drawDB" className="h-9" />
@@ -108,15 +119,15 @@ function RecentDiagrams() {
             <Spin size="large" />
           </div>
         ) : entries.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-300 bg-white py-16 text-center text-zinc-500">
+          <div className="rounded-xl border border-dashed border-[var(--semi-color-border)] bg-[var(--semi-color-bg-2)] py-16 text-center text-zinc-500">
             {t("cloud_no_diagrams")}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-xl border border-[var(--semi-color-border)] bg-[var(--semi-color-bg-2)] shadow-sm">
             {entries.map((entry) => (
               <div
                 key={`${entry.source}:${entry.diagramId}`}
-                className="flex w-full cursor-pointer items-center gap-4 border-b border-zinc-100 px-5 py-3.5 text-left last:border-b-0 hover:bg-zinc-50"
+                className="flex w-full cursor-pointer items-center gap-4 border-b border-[var(--semi-color-border)] px-5 py-3.5 text-left last:border-b-0 hover:bg-[var(--semi-color-fill-0)]"
                 onClick={() => navigate(`/editor/diagrams/${entry.diagramId}`)}
               >
                 <i className="bi bi-diagram-3 text-lg text-zinc-400" />

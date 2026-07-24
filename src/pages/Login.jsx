@@ -35,8 +35,8 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-100 p-4">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-zinc-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--semi-color-bg-1)] text-[var(--semi-color-text-0)] p-4">
+      <div className="w-full max-w-sm space-y-6 rounded-xl border border-[var(--semi-color-border)] bg-[var(--semi-color-bg-2)] p-8 shadow-sm">
         <img src={logo} alt="drawDB" className="mx-auto h-10" />
         <div className="text-center text-lg font-semibold">
           {t("cloud_login")}

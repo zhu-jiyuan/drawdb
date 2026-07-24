@@ -163,9 +163,9 @@ export default function Area({
         <div
           className={`w-full h-full p-2 rounded cursor-move border-2 ${
             isHovered
-              ? "border-dashed border-blue-500"
+              ? "border-dashed border-[#6965db]"
               : isSelected
-                ? "border-blue-500 opacity-100"
+                ? "border-[#6965db] opacity-100"
                 : "border-slate-400 opacity-100"
           }`}
           style={{ backgroundColor: `${data.color}66` }}

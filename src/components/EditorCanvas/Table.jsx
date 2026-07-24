@@ -10,7 +10,6 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconMore,
-  IconMinus,
   IconDeleteStroked,
   IconEditStroked,
   IconCopyStroked,
@@ -26,6 +25,7 @@ import {
   ButtonGroup,
   SideSheet,
   Divider,
+  Select,
 } from "@douyinfe/semi-ui";
 import {
   useLayout,
@@ -35,6 +35,7 @@ import {
   useUndoRedo,
   useTypes,
   useEnums,
+  useTransform,
 } from "../../hooks";
 import TableInfo from "../EditorSidePanel/TablesTab/TableInfo";
 import { useTranslation } from "react-i18next";
@@ -78,7 +79,8 @@ export default function Table({
   const { setUndoStack, setRedoStack } = useUndoRedo();
   const { types } = useTypes();
   const { enums } = useEnums();
-  const { settings } = useSettings();
+  const { settings, setSettings } = useSettings();
+  const { transform } = useTransform();
   const { t } = useTranslation();
   const {
     selectedElement,
@@ -245,6 +247,30 @@ export default function Table({
     setRedoStack([]);
   };
 
+  // Drag the right edge to resize table width. Width is a global setting in
+  // drawdb (relationship geometry assumes one width), so every table resizes
+  // together — the handle just makes it directly adjustable from the canvas.
+  const startWidthResize = (e) => {
+    if (layout.readOnly) return;
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startWidth = settings.tableWidth;
+    const zoom = transform.zoom || 1;
+    const onMove = (ev) => {
+      const next = Math.round(startWidth + (ev.clientX - startX) / zoom);
+      setSettings((prev) => ({
+        ...prev,
+        tableWidth: Math.min(520, Math.max(180, next)),
+      }));
+    };
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   // Same option list as the side panel's type Select.
   const typeOptions = [
     ...Object.keys(dbToTypes[database]),
@@ -346,14 +372,26 @@ export default function Table({
       >
         <div
           onDoubleClick={openEditor}
-          className={`border-2 hover:border-dashed hover:border-blue-500
+          className={`relative border-2 hover:border-dashed hover:border-[#6965db]
                select-none rounded-lg w-full ${
                  settings.mode === "light"
                    ? "bg-zinc-100 text-zinc-800"
                    : "bg-zinc-800 text-zinc-200"
-               } ${isSelected ? "border-solid border-blue-500" : borderColor}`}
+               } ${isSelected ? "border-solid border-[#6965db]" : borderColor}`}
           style={{ direction: "ltr" }}
         >
+          {!layout.readOnly && (
+            <div
+              className="absolute top-0 right-0 z-10 h-full w-[14px] flex justify-end cursor-ew-resize touch-none"
+              title={t("table_width")}
+              onDoubleClick={(e) => e.stopPropagation()}
+              onPointerDown={startWidthResize}
+            >
+              {/* Always-visible thin violet bar so the resize affordance is
+                  discoverable (and touch has no hover); thickens on hover. */}
+              <div className="h-full w-[3px] bg-[#6965db]/30 group-hover:bg-[#6965db]/70 group-hover:w-[4px]" />
+            </div>
+          )}
           <div
             className="h-[10px] w-full rounded-t-md"
             style={{ backgroundColor: tableData.color }}
@@ -498,7 +536,12 @@ export default function Table({
           {visibleFieldEntries.map(({ field: e }, i) => {
             const resolved = resolveType(database, e.type);
             const reference = getFieldReference(e);
-            return settings.showFieldSummary ? (
+            // Suppress the hover summary popover while inline-editing this
+            // field — otherwise it lingers open (focus leaves the row into the
+            // portal) and its z-index fights the type dropdown.
+            const isEditingThis =
+              editingFieldId === e.id || editingTypeFieldId === e.id;
+            return settings.showFieldSummary && !isEditingThis ? (
               <Popover
                 key={e.id ?? i}
                 content={
@@ -654,7 +697,7 @@ export default function Table({
             } flex items-center gap-2 overflow-hidden`}
           >
             <button
-              className="shrink-0 w-[10px] h-[10px] bg-[#2f68adcc] rounded-full"
+              className="shrink-0 w-[10px] h-[10px] bg-[#6965dbcc] rounded-full"
               onPointerDown={(e) => {
                 if (!e.isPrimary) return;
 
@@ -688,6 +731,7 @@ export default function Table({
             />
             <span
               className="overflow-hidden text-ellipsis whitespace-nowrap"
+              title={fieldData.name}
               onDoubleClick={(e) => {
                 if (layout.readOnly) return;
                 e.stopPropagation();
@@ -708,73 +752,73 @@ export default function Table({
               )}
             </span>
           </div>
-          <div className="text-zinc-400">
+          <div className="text-zinc-400 flex items-center gap-1 shrink-0">
             {editingTypeFieldId === fieldData.id ? (
-              <select
-                autoFocus
-                defaultValue={fieldData.type}
-                className="bg-transparent border border-blue-400 rounded outline-none font-mono max-w-[120px]"
-                ref={(el) => {
-                  if (el) {
-                    try {
-                      el.showPicker();
-                    } catch {
-                      // showPicker needs a user gesture / recent browsers;
-                      // focused select still opens on interaction
-                    }
-                  }
-                }}
+              <div
+                className="w-[130px]"
                 onPointerDown={(e) => e.stopPropagation()}
                 onDoubleClick={(e) => e.stopPropagation()}
                 onClick={(e) => e.stopPropagation()}
-                onChange={(e) => commitFieldType(fieldData, e.target.value)}
-                onBlur={() => setEditingTypeFieldId(null)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") setEditingTypeFieldId(null);
-                }}
               >
-                {typeOptions.map((tp) => (
-                  <option key={tp} value={tp}>
-                    {tp}
-                  </option>
-                ))}
-              </select>
-            ) : hoveredField === index ? (
-              <Button
-                theme="solid"
-                size="small"
-                style={{
-                  backgroundColor: "#d42020b3",
-                }}
-                icon={<IconMinus />}
-                disabled={layout.readOnly}
-                onClick={() => {
-                  if (layout.readOnly) return;
-                  deleteField(fieldData, tableData.id);
-                }}
-              />
-            ) : settings.showDataTypes ? (
-              <div className="flex gap-1 items-center">
-                {fieldData.primary && <IconKeyStroked />}
-                {!fieldData.notNull && <span className="font-mono">?</span>}
-                <span
-                  className={
-                    "font-mono " +
-                    (fieldResolved.isCustom ? "" : fieldResolved.color)
-                  }
-                  style={
-                    fieldResolved.isCustom ? { color: fieldResolved.color } : {}
-                  }
-                >
-                  {fieldData.type +
-                    ((fieldResolved.isSized || fieldResolved.hasPrecision) &&
-                    fieldData.size &&
-                    fieldData.size !== ""
-                      ? `(${fieldData.size})`
-                      : "")}
-                </span>
+                <Select
+                  size="small"
+                  className="w-full"
+                  filter
+                  autoFocus
+                  defaultOpen
+                  defaultValue={fieldData.type}
+                  optionList={typeOptions.map((tp) => ({
+                    label: tp,
+                    value: tp,
+                  }))}
+                  onChange={(value) => commitFieldType(fieldData, value)}
+                  onBlur={() => setEditingTypeFieldId(null)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setEditingTypeFieldId(null);
+                  }}
+                />
               </div>
-            ) : null}
+            ) : (
+              <>
+                {settings.showDataTypes && (
+                  <div className="flex gap-1 items-center">
+                    {fieldData.primary && <IconKeyStroked />}
+                    {!fieldData.notNull && <span className="font-mono">?</span>}
+                    <span
+                      className={
+                        "font-mono " +
+                        (fieldResolved.isCustom ? "" : fieldResolved.color)
+                      }
+                      style={
+                        fieldResolved.isCustom
+                          ? { color: fieldResolved.color }
+                          : {}
+                      }
+                    >
+                      {fieldData.type +
+                        ((fieldResolved.isSized || fieldResolved.hasPrecision) &&
+                        fieldData.size &&
+                        fieldData.size !== ""
+                          ? `(${fieldData.size})`
+                          : "")}
+                    </span>
+                  </div>
+                )}
+                {hoveredField === index && !layout.readOnly && (
+                  <Button
+                    theme="borderless"
+                    size="small"
+                    type="danger"
+                    title={t("delete")}
+                    icon={<IconDeleteStroked />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteField(fieldData, tableData.id);
+                    }}
+                  />
+                )}
+              </>
+            )}
           </div>
         </div>
         {showFieldComment && (

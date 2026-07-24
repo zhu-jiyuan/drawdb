@@ -1,4 +1,4 @@
-export const defaultBlue = "#175e7a";
+export const defaultBlue = "#6965db";
 export const defaultNoteTheme = "#fcf7ac";
 export const noteWidth = 180;
 export const noteRadius = 3;
@@ -17,7 +17,7 @@ export const vectorColor = "text-slate-500";
 export const otherColor = "text-zinc-500";
 export const dateColor = "text-cyan-500";
 export const tableHeaderHeight = 50;
-export const tableWidth = 220;
+export const tableWidth = 240;
 export const gridSize = 24;
 export const gridCircleRadius = 0.85;
 export const tableFieldHeight = 36;

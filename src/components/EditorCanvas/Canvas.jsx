@@ -443,6 +443,57 @@ export default function Canvas() {
   /**
    * @param {PointerEvent} e
    */
+  // One-shot auto-fit on narrow viewports: a saved pan/zoom can strand tables
+  // off the right edge of a phone screen with no easy way back, so fit the
+  // content to the viewport once after the diagram loads. Desktop keeps its
+  // saved view untouched.
+  const autoFitted = useRef(false);
+  useEffect(() => {
+    if (autoFitted.current) return;
+    if (tables.length === 0) return;
+    if (window.innerWidth >= 768) {
+      autoFitted.current = true;
+      return;
+    }
+    const el = document.getElementById("canvas");
+    if (!el) return;
+    const canvas = el.getBoundingClientRect();
+    if (canvas.width === 0) return;
+    autoFitted.current = true;
+
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity;
+    tables.forEach((t) => {
+      minX = Math.min(minX, t.x);
+      minY = Math.min(minY, t.y);
+      maxX = Math.max(maxX, t.x + settings.tableWidth);
+      maxY = Math.max(maxY, t.y + 200);
+    });
+    areas.forEach((a) => {
+      minX = Math.min(minX, a.x);
+      minY = Math.min(minY, a.y);
+      maxX = Math.max(maxX, a.x + a.width);
+      maxY = Math.max(maxY, a.y + a.height);
+    });
+    const pad = 40;
+    const contentW = maxX - minX + pad * 2;
+    const contentH = maxY - minY + pad * 2;
+    const zoom = Math.min(
+      1,
+      canvas.width / contentW,
+      canvas.height / contentH,
+    );
+    // transform.pan is the diagram point shown at the viewport CENTER
+    // (viewBox.left = pan.x - viewBoxSize/2), so center on the content's
+    // bounding-box center — not its top-left corner.
+    setTransform({
+      zoom,
+      pan: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+    });
+  }, [tables, areas, settings.tableWidth, setTransform]);
+
   const handlePointerDown = (e) => {
     if (!e.isPrimary) return;
 
@@ -457,6 +508,19 @@ export default function Canvas() {
     const isMouseLeftButton = e.button === 0;
     const isMouseMiddleButton = e.button === 1;
     const isMouseRightButton = e.button === 2;
+    const isTouch = e.pointerType === "touch" || e.pointerType === "pen";
+
+    // Touch has no middle/right button, so a one-finger press on empty canvas
+    // pans (Excalidraw behavior); pressing on a table still moves it.
+    if (isTouch && isMouseLeftButton && elementPointerDown === null) {
+      setPanning({
+        isPanning: true,
+        panStart: transform.pan,
+        cursorStart: pointer.spaces.screen,
+      });
+      pointer.setStyle("grabbing");
+      return;
+    }
 
     if (isMouseLeftButton) {
       setBulkSelectRect({

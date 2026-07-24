@@ -149,7 +149,7 @@ function CloudControls() {
             </Dropdown.Menu>
           }
         >
-          <div className="flex cursor-pointer select-none items-center gap-2 rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs shadow-md dark:border-zinc-600 dark:bg-zinc-800">
+          <div className="flex cursor-pointer select-none items-center gap-2 rounded-full border border-[var(--semi-color-border)] bg-[var(--semi-color-bg-2)] px-3 py-1 text-xs text-[var(--semi-color-text-0)] shadow-md">
             <StatusIcon sync={sync} />
             <StatusLabel sync={sync} t={t} />
           </div>

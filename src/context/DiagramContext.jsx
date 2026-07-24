@@ -37,11 +37,18 @@ export default function DiagramContextProvider({ children }) {
 
   const addTable = (data, addToHistory = true) => {
     const id = nanoid();
+    // Friendly incrementing name (table_1, table_2, …) skipping any that
+    // already exist, and a small cascade offset so new tables don't stack
+    // exactly on top of each other.
+    let n = tables.length + 1;
+    const taken = new Set(tables.map((tb) => tb.name));
+    while (taken.has(`table_${n}`)) n += 1;
+    const cascade = (tables.length % 6) * 28;
     const newTable = {
       id,
-      name: `table_${id}`,
-      x: transform.pan.x,
-      y: transform.pan.y,
+      name: `table_${n}`,
+      x: transform.pan.x + 40 + cascade,
+      y: transform.pan.y + 40 + cascade,
       locked: false,
       fields: [
         {
