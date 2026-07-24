@@ -65,6 +65,7 @@ export default function McpKeyModal({ visible, onClose }) {
   return (
     <Modal
       centered
+      width={"min(448px, 94vw)"}
       visible={visible}
       title={t("cloud_mcp_key_title")}
       footer={null}

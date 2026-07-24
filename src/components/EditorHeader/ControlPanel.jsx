@@ -1,4 +1,4 @@
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { layoutTables } from "../../../mcp/shapes.js";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
@@ -927,10 +927,15 @@ export default function ControlPanel({
   };
 
   const fullscreen = useFullscreen();
+  const wasFullscreen = useRef(false);
 
+  // Restore the chrome when EXITING fullscreen only. Running on mount too
+  // would clobber the initial layout (e.g. the collapsed sidebar on phones).
   useEffect(() => {
-    if (!fullscreen)
+    if (wasFullscreen.current && !fullscreen) {
       setLayout((p) => ({ ...p, header: true, sidebar: true, toolbar: true }));
+    }
+    wasFullscreen.current = fullscreen;
   }, [fullscreen, setLayout]);
 
   const menu = {

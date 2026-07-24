@@ -76,7 +76,7 @@ function RecentDiagrams() {
   return (
     <div className="min-h-screen bg-zinc-100 p-6">
       <div className="mx-auto max-w-3xl space-y-6">
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
           <img src={logo} alt="drawDB" className="h-9" />
           <div className="flex gap-2">
             <Button

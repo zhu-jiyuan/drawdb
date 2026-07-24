@@ -27,7 +27,7 @@ export default function CloudOverlay() {
 
   if (auth.status === "anon") {
     return (
-      <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
+      <div className="pointer-events-auto absolute bottom-16 left-3 z-20 md:bottom-3">
         <Button
           size="small"
           icon={<i className="bi bi-cloud me-1" />}
@@ -131,7 +131,7 @@ function CloudControls() {
 
   return (
     <>
-      <div className="pointer-events-auto absolute bottom-3 left-3 z-20">
+      <div className="pointer-events-auto absolute bottom-16 left-3 z-20 md:bottom-3">
         <Dropdown
           position="topLeft"
           render={
@@ -182,6 +182,7 @@ function CloudControls() {
 
       <Modal
         centered
+        width={"min(448px, 94vw)"}
         closable={false}
         maskClosable={false}
         visible={!!sync.conflict}
@@ -209,6 +210,7 @@ function CloudControls() {
 
       <Modal
         centered
+        width={"min(448px, 94vw)"}
         visible={showMigrate}
         title={t("cloud_upload_local", { count: localCount })}
         okText={t("confirm")}
@@ -267,6 +269,7 @@ function ReloginModal() {
   return (
     <Modal
       centered
+      width={"min(448px, 94vw)"}
       closable={false}
       maskClosable={false}
       visible={auth.expired}

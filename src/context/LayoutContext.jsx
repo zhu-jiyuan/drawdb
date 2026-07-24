@@ -6,7 +6,9 @@ export const LayoutContext = createContext(null);
 
 const defaultLayout = {
   header: true,
-  sidebar: true,
+  // On phones the 374px side panel would swallow the whole screen — start
+  // collapsed there; the View menu can always bring it back.
+  sidebar: typeof window === "undefined" || window.innerWidth >= 768,
   issues: true,
   toolbar: true,
   dbmlEditor: false,

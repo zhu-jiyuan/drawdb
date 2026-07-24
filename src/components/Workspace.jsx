@@ -540,7 +540,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           {layout.toolbar && (
             <div
               ref={setToolbarContainer}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
+              className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 max-w-[96vw] overflow-x-auto"
             />
           )}
           {version && (
