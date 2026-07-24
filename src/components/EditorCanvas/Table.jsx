@@ -33,10 +33,14 @@ import {
   useDiagram,
   useSelect,
   useUndoRedo,
+  useTypes,
+  useEnums,
 } from "../../hooks";
 import TableInfo from "../EditorSidePanel/TablesTab/TableInfo";
 import { useTranslation } from "react-i18next";
-import { resolveType } from "../../utils/customTypes";
+import { getCustomTypesForDb, resolveType } from "../../utils/customTypes";
+import { fieldUpdatesForTypeChange } from "../../utils/fieldTypeChange";
+import { dbToTypes } from "../../data/datatypes";
 import { isRtl } from "../../i18n/utils/rtl";
 import i18n from "../../i18n/i18n";
 import {
@@ -56,9 +60,10 @@ export default function Table({
   setLinkingLine,
 }) {
   const [hoveredField, setHoveredField] = useState(null);
-  // In-place editing on the canvas: table title / a field's name
+  // In-place editing on the canvas: table title / a field's name or type
   const [editingName, setEditingName] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState(null);
+  const [editingTypeFieldId, setEditingTypeFieldId] = useState(null);
   const { layout } = useLayout();
   const {
     database,
@@ -71,6 +76,8 @@ export default function Table({
     updateField,
   } = useDiagram();
   const { setUndoStack, setRedoStack } = useUndoRedo();
+  const { types } = useTypes();
+  const { enums } = useEnums();
   const { settings } = useSettings();
   const { t } = useTranslation();
   const {
@@ -236,6 +243,38 @@ export default function Table({
       },
     ]);
     setRedoStack([]);
+  };
+
+  // Same option list as the side panel's type Select.
+  const typeOptions = [
+    ...Object.keys(dbToTypes[database]),
+    ...Object.keys(getCustomTypesForDb(database)),
+    ...types.map((x) => x.name.toUpperCase()),
+    ...enums.map((x) => x.name.toUpperCase()),
+  ];
+
+  const commitFieldType = (fieldData, value) => {
+    setEditingTypeFieldId(null);
+    if (!value || value === fieldData.type) return;
+    setUndoStack((prev) => [
+      ...prev,
+      {
+        action: Action.EDIT,
+        element: ObjectType.TABLE,
+        component: "field",
+        tid: tableData.id,
+        fid: fieldData.id,
+        undo: { type: fieldData.type },
+        redo: { type: value },
+        message: t("edit_table", { tableName: tableData.name, extra: "[field]" }),
+      },
+    ]);
+    setRedoStack([]);
+    updateField(
+      tableData.id,
+      fieldData.id,
+      fieldUpdatesForTypeChange(database, fieldData, value),
+    );
   };
 
   // Shared props for the in-place inputs: keep pointer/dblclick events from
@@ -600,6 +639,13 @@ export default function Table({
           // https://stackoverflow.com/a/70976017/1137077
           e.target.releasePointerCapture(e.pointerId);
         }}
+        onDoubleClick={(e) => {
+          // Anywhere on the row except the name span (which edits the name
+          // and stops propagation): edit the field's type in place.
+          if (layout.readOnly) return;
+          e.stopPropagation();
+          setEditingTypeFieldId(fieldData.id);
+        }}
       >
         <div className="h-[36px] px-2 py-1 flex justify-between items-center gap-1">
           <div
@@ -663,7 +709,37 @@ export default function Table({
             </span>
           </div>
           <div className="text-zinc-400">
-            {hoveredField === index ? (
+            {editingTypeFieldId === fieldData.id ? (
+              <select
+                autoFocus
+                defaultValue={fieldData.type}
+                className="bg-transparent border border-blue-400 rounded outline-none font-mono max-w-[120px]"
+                ref={(el) => {
+                  if (el) {
+                    try {
+                      el.showPicker();
+                    } catch {
+                      // showPicker needs a user gesture / recent browsers;
+                      // focused select still opens on interaction
+                    }
+                  }
+                }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onDoubleClick={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => commitFieldType(fieldData, e.target.value)}
+                onBlur={() => setEditingTypeFieldId(null)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setEditingTypeFieldId(null);
+                }}
+              >
+                {typeOptions.map((tp) => (
+                  <option key={tp} value={tp}>
+                    {tp}
+                  </option>
+                ))}
+              </select>
+            ) : hoveredField === index ? (
               <Button
                 theme="solid"
                 size="small"

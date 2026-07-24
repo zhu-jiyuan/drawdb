@@ -13,7 +13,8 @@ import { useTranslation } from "react-i18next";
 import { dbToTypes } from "../../../data/datatypes";
 import { DragHandle } from "../../SortableList/DragHandle";
 import FieldDetails from "./FieldDetails";
-import { getCustomTypesForDb, resolveType } from "../../../utils/customTypes";
+import { getCustomTypesForDb } from "../../../utils/customTypes";
+import { fieldUpdatesForTypeChange } from "../../../utils/fieldTypeChange";
 
 export default function TableField({ data, tid, index, inherited }) {
   const { updateField } = useDiagram();
@@ -110,44 +111,11 @@ export default function TableField({ data, tid, index, inherited }) {
               },
             ]);
             setRedoStack([]);
-            const typeInfo = resolveType(database, value);
-            const incr = data.increment && !!typeInfo.canIncrement;
-
-            if (value === "ENUM" || value === "SET") {
-              updateField(tid, data.id, {
-                type: value,
-                default: "",
-                values: data.values ? [...data.values] : [],
-                increment: incr,
-              });
-            } else if (typeInfo.isSized || typeInfo.hasPrecision) {
-              updateField(tid, data.id, {
-                type: value,
-                size: typeInfo.defaultSize,
-                increment: incr,
-              });
-            } else if (!typeInfo.hasDefault || incr) {
-              updateField(tid, data.id, {
-                type: value,
-                increment: incr,
-                default: "",
-                size: "",
-                values: [],
-              });
-            } else if (typeInfo.hasCheck) {
-              updateField(tid, data.id, {
-                type: value,
-                check: "",
-                increment: incr,
-              });
-            } else {
-              updateField(tid, data.id, {
-                type: value,
-                increment: incr,
-                size: "",
-                values: [],
-              });
-            }
+            updateField(
+              tid,
+              data.id,
+              fieldUpdatesForTypeChange(database, data, value),
+            );
           }}
         />
       </div>
