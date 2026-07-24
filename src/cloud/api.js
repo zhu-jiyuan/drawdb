@@ -24,6 +24,10 @@ export const login = (password) => api.post("/auth/login", { password });
 export const logout = () => api.post("/auth/logout");
 export const me = (config) => api.get("/auth/me", config);
 
+export const getMcpKeyStatus = () => api.get("/mcp-key");
+export const generateMcpKey = () => api.post("/mcp-key");
+export const revokeMcpKey = () => api.delete("/mcp-key");
+
 export const listDiagrams = () => api.get("/diagrams");
 export const getDiagram = (id) => api.get(`/diagrams/${id}`);
 export const putDiagram = (id, body) => api.put(`/diagrams/${id}`, body);

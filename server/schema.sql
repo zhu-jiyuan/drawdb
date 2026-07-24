@@ -30,3 +30,10 @@ CREATE TABLE IF NOT EXISTS diagram_revisions (
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE(diagram_id, version)
 );
+
+CREATE TABLE IF NOT EXISTS mcp_keys (
+  id           integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
+  key_hash     text NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  last_used_at timestamptz
+);

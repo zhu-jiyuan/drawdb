@@ -119,24 +119,58 @@ function sweepFailures() {
 
 export async function requireSession(request, reply) {
   // API-key path: presence of an Authorization header selects it explicitly,
-  // so a bad key never falls through to the cookie flow.
+  // so a bad key never falls through to the cookie flow. Valid keys are the
+  // UI-managed one in the mcp_keys table and, if set, the MCP_KEY env var.
   const authHeader = request.headers.authorization;
   if (typeof authHeader === "string" && authHeader.length > 0) {
-    if (!MCP_KEY || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader.startsWith("Bearer ")) {
       return reply.code(401).send({ error: "unauthorized" });
     }
     if (isRateLimited(request.ip)) {
       return reply.code(429).send({ error: "too_many_attempts" });
     }
     const key = authHeader.slice("Bearer ".length);
-    const ok = crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY));
-    if (!ok) {
-      recordFailure(request.ip);
-      return reply.code(401).send({ error: "unauthorized" });
+    const keyHash = sha256Hex(key);
+
+    if (MCP_KEY && crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY))) {
+      return; // env-configured key (compose/simple deployments)
     }
-    return; // authenticated via MCP key — no session row involved
+
+    const { rows } = await pool.query(
+      "SELECT key_hash, last_used_at FROM mcp_keys WHERE id = 1",
+    );
+    if (
+      rows.length === 1 &&
+      crypto.timingSafeEqual(
+        Buffer.from(keyHash, "hex"),
+        Buffer.from(rows[0].key_hash, "hex"),
+      )
+    ) {
+      const lastUsed = rows[0].last_used_at
+        ? new Date(rows[0].last_used_at).getTime()
+        : 0;
+      if (Date.now() - lastUsed > SLIDING_REFRESH_MS) {
+        pool
+          .query("UPDATE mcp_keys SET last_used_at = now() WHERE id = 1")
+          .catch((err) => request.log.warn({ err }, "mcp key touch failed"));
+      }
+      return; // authenticated via UI-managed MCP key
+    }
+
+    recordFailure(request.ip);
+    return reply.code(401).send({ error: "unauthorized" });
   }
 
+  return checkCookieSession(request, reply);
+}
+
+// Cookie-session-only guard: used for credential management (the MCP key must
+// not be able to manage itself, or a leaked key could survive rotation).
+export async function requireCookieSession(request, reply) {
+  return checkCookieSession(request, reply);
+}
+
+async function checkCookieSession(request, reply) {
   const token = request.cookies?.[COOKIE_NAME];
   if (!token) {
     return reply.code(401).send({ error: "unauthorized" });
@@ -163,6 +197,48 @@ export async function requireSession(request, reply) {
       )
       .catch((err) => request.log.warn({ err }, "sliding session refresh failed"));
   }
+}
+
+// ---- MCP key management (cookie session only) --------------------------------
+
+async function getMcpKeyStatus() {
+  const { rows } = await pool.query(
+    "SELECT created_at, last_used_at FROM mcp_keys WHERE id = 1",
+  );
+  if (rows.length === 0) return { exists: false, envKeyConfigured: !!MCP_KEY };
+  return {
+    exists: true,
+    envKeyConfigured: !!MCP_KEY,
+    createdAt: rows[0].created_at,
+    lastUsedAt: rows[0].last_used_at,
+  };
+}
+
+export function registerMcpKeyRoutes(app) {
+  app.register(async (scope) => {
+    scope.addHook("preHandler", requireCookieSession);
+
+    scope.get("/api/mcp-key", async () => getMcpKeyStatus());
+
+    // Generates (or replaces) the key. The plaintext is returned exactly once;
+    // only its sha256 is stored.
+    scope.post("/api/mcp-key", async () => {
+      const key = crypto.randomBytes(32).toString("base64url");
+      await pool.query(
+        `INSERT INTO mcp_keys (id, key_hash, created_at, last_used_at)
+         VALUES (1, $1, now(), NULL)
+         ON CONFLICT (id) DO UPDATE
+           SET key_hash = $1, created_at = now(), last_used_at = NULL`,
+        [sha256Hex(key)],
+      );
+      return { key };
+    });
+
+    scope.delete("/api/mcp-key", async () => {
+      await pool.query("DELETE FROM mcp_keys WHERE id = 1");
+      return { ok: true };
+    });
+  });
 }
 
 // ---- security hooks (CSRF + content-type) ----------------------------------

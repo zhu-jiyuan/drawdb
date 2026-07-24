@@ -12,6 +12,7 @@ import {
 } from "../components/EditorHeader/Modal/Open/diagram";
 import { cloudList, cloudDelete } from "../cloud/sync";
 import { useCloudAuth } from "../cloud/authContext";
+import McpKeyModal from "../cloud/McpKeyModal";
 import Login from "./Login";
 import logo from "../assets/logo_light_160.png";
 
@@ -28,6 +29,7 @@ function RecentDiagrams() {
   const navigate = useNavigate();
   const [cloud, setCloud] = useState(null); // null = loading
   const [error, setError] = useState(false);
+  const [showMcpKey, setShowMcpKey] = useState(false);
   const local = useLiveQuery(() => db.diagrams.toArray(), [], []);
 
   useEffect(() => {
@@ -76,14 +78,24 @@ function RecentDiagrams() {
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between pt-4">
           <img src={logo} alt="drawDB" className="h-9" />
-          <Button
-            theme="solid"
-            icon={<i className="bi bi-plus-lg me-1" />}
-            onClick={() => navigate("/editor")}
-          >
-            {t("cloud_new_diagram")}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              icon={<i className="bi bi-key me-1" />}
+              onClick={() => setShowMcpKey(true)}
+            >
+              {t("cloud_mcp_key_title")}
+            </Button>
+            <Button
+              theme="solid"
+              icon={<i className="bi bi-plus-lg me-1" />}
+              onClick={() => navigate("/editor")}
+            >
+              {t("cloud_new_diagram")}
+            </Button>
+          </div>
         </div>
+
+        <McpKeyModal visible={showMcpKey} onClose={() => setShowMcpKey(false)} />
 
         <div className="text-lg font-semibold">{t("cloud_recent_title")}</div>
 

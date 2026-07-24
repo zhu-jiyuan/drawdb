@@ -7,6 +7,7 @@ import fastifyStatic from "@fastify/static";
 import { pool, runSchema } from "./db.js";
 import {
   registerAuthRoutes,
+  registerMcpKeyRoutes,
   registerSecurityHooks,
   startSessionCleanup,
 } from "./auth.js";
@@ -44,6 +45,7 @@ async function main() {
   await app.register(cookie);
   registerSecurityHooks(app);
   registerAuthRoutes(app);
+  registerMcpKeyRoutes(app);
   registerDiagramRoutes(app);
 
   // Static SPA serving (optional). STATIC_DIR is resolved relative to this file.
