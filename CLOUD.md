@@ -23,6 +23,10 @@
 
 ## 部署
 
+> 生产环境已迁移至 GitOps:清单在 [zhu-jiyuan/k8s-deploy](https://github.com/zhu-jiyuan/k8s-deploy)
+> 的 `manifests/drawdb/`,由集群内 Argo CD 自动同步,不再使用本仓库的 compose/清单部署。
+> 以下 compose 方式仅适用于单机自托管。
+
 ```bash
 cp .env.example .env        # 编辑 .env,设置 AUTH_PASSWORD(登录密码)
 docker compose -f compose.cloud.yml up -d --build
