@@ -28,17 +28,22 @@ const DRAWDB_URL = (process.env.DRAWDB_URL || "https://drawdb.mpga.me").replace(
   /\/+$/,
   "",
 );
+const DRAWDB_MCP_KEY = process.env.DRAWDB_MCP_KEY;
 const DRAWDB_PASSWORD = process.env.DRAWDB_PASSWORD;
 
-if (!DRAWDB_PASSWORD || DRAWDB_PASSWORD.length === 0) {
+if (!DRAWDB_MCP_KEY && !DRAWDB_PASSWORD) {
   process.stderr.write(
-    "drawdb-mcp: FATAL — DRAWDB_PASSWORD environment variable is required.\n" +
-      "Set it to your drawdb deployment's account password and restart.\n",
+    "drawdb-mcp: FATAL — set DRAWDB_MCP_KEY (preferred; the deployment's MCP_KEY)\n" +
+      "or DRAWDB_PASSWORD (account password) and restart.\n",
   );
   process.exit(1);
 }
 
-const client = new DrawdbClient({ baseUrl: DRAWDB_URL, password: DRAWDB_PASSWORD });
+const client = new DrawdbClient({
+  baseUrl: DRAWDB_URL,
+  password: DRAWDB_PASSWORD,
+  apiKey: DRAWDB_MCP_KEY,
+});
 
 const editorUrl = (id) => `${DRAWDB_URL}/editor/diagrams/${id}`;
 
@@ -350,9 +355,10 @@ server.registerTool(
 // ---- boot ------------------------------------------------------------------
 
 async function main() {
-  // Validate credentials up front so a bad password fails fast and visibly.
+  // Validate credentials up front so a bad key/password fails fast and visibly.
   try {
-    await client.login();
+    if (DRAWDB_MCP_KEY) await client.verifyKey();
+    else await client.login();
   } catch (err) {
     process.stderr.write(`drawdb-mcp: ${err.message}\n`);
     process.exit(1);

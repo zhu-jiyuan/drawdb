@@ -10,6 +10,7 @@ services:
     environment:
       DATABASE_URL: postgres://drawdb:${POSTGRES_PASSWORD:-drawdb}@db:5432/drawdb
       AUTH_PASSWORD: ${AUTH_PASSWORD:?set AUTH_PASSWORD in .env}
+      MCP_KEY: ${MCP_KEY:-}
     depends_on:
       db:
         condition: service_healthy

@@ -8,6 +8,11 @@ const SLIDING_REFRESH_MS = 60 * 60 * 1000; // refresh expiry if last used > 1h a
 // AUTH_PASSWORD is validated (non-empty) in index.js before the server boots.
 const AUTH_PASSWORD = process.env.AUTH_PASSWORD || "";
 const COOKIE_SECURE = process.env.COOKIE_SECURE || "auto";
+// Optional API key for non-browser clients (the MCP server). Grants the same
+// diagram access as a session, via `Authorization: Bearer <key>` — so the
+// account password never has to leave the browser login flow. Unset = bearer
+// auth disabled entirely.
+const MCP_KEY = process.env.MCP_KEY || "";
 
 // ---- helpers ---------------------------------------------------------------
 
@@ -113,6 +118,25 @@ function sweepFailures() {
 // ---- session lookup (preHandler for protected routes) ----------------------
 
 export async function requireSession(request, reply) {
+  // API-key path: presence of an Authorization header selects it explicitly,
+  // so a bad key never falls through to the cookie flow.
+  const authHeader = request.headers.authorization;
+  if (typeof authHeader === "string" && authHeader.length > 0) {
+    if (!MCP_KEY || !authHeader.startsWith("Bearer ")) {
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+    if (isRateLimited(request.ip)) {
+      return reply.code(429).send({ error: "too_many_attempts" });
+    }
+    const key = authHeader.slice("Bearer ".length);
+    const ok = crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY));
+    if (!ok) {
+      recordFailure(request.ip);
+      return reply.code(401).send({ error: "unauthorized" });
+    }
+    return; // authenticated via MCP key — no session row involved
+  }
+
   const token = request.cookies?.[COOKIE_NAME];
   if (!token) {
     return reply.code(401).send({ error: "unauthorized" });

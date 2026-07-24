@@ -25,10 +25,31 @@ export class ApiError extends Error {
 }
 
 export class DrawdbClient {
-  constructor({ baseUrl, password }) {
+  constructor({ baseUrl, password, apiKey }) {
     this.baseUrl = baseUrl.replace(/\/+$/, "");
     this.password = password;
+    this.apiKey = apiKey || null;
     this.cookie = null;
+  }
+
+  // Cheap authenticated call to fail fast on a bad key at startup.
+  async verifyKey() {
+    const res = await this._send("GET", "/api/diagrams");
+    if (res.status === 401) {
+      throw new ApiError(
+        "Authentication failed: the DRAWDB_MCP_KEY is not accepted by the server. Check the key and that the deployment sets MCP_KEY.",
+        401,
+      );
+    }
+    if (res.status === 429) {
+      throw new ApiError(
+        "Rate-limited by the server (too many recent auth failures). Wait ~15 minutes and retry.",
+        429,
+      );
+    }
+    if (!res.ok) {
+      throw new ApiError(`Key check failed with HTTP ${res.status}.`, res.status);
+    }
   }
 
   // Authenticates and captures the session cookie. Throws a clear ApiError on
@@ -77,7 +98,8 @@ export class DrawdbClient {
 
   async _send(method, path, body) {
     const headers = {};
-    if (this.cookie) headers.cookie = this.cookie;
+    if (this.apiKey) headers.authorization = `Bearer ${this.apiKey}`;
+    else if (this.cookie) headers.cookie = this.cookie;
     const init = { method, headers };
     if (body !== undefined) {
       headers["content-type"] = "application/json";
@@ -86,14 +108,21 @@ export class DrawdbClient {
     return fetch(`${this.baseUrl}${path}`, init);
   }
 
-  // JSON in / JSON out. Re-logs in once on 401 then retries. 409 is thrown as an
+  // JSON in / JSON out. With an API key a 401 is terminal (the key is wrong);
+  // with password auth we re-login once and retry. 409 is thrown as an
   // ApiError carrying `.data` (the conflict payload); other non-2xx throw with
   // the server's `error` field. 200-with-no-body returns null.
   async request(method, path, body) {
-    if (!this.cookie) await this.login();
+    if (!this.apiKey && !this.cookie) await this.login();
 
     let res = await this._send(method, path, body);
     if (res.status === 401) {
+      if (this.apiKey) {
+        throw new ApiError(
+          "Authentication failed: the DRAWDB_MCP_KEY was rejected. Check the key and the server's MCP_KEY setting.",
+          401,
+        );
+      }
       await this.login();
       res = await this._send(method, path, body);
     }

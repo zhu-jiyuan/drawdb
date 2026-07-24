@@ -8,7 +8,8 @@
 
 | 变量 | 是否必填 | 说明 |
 | --- | --- | --- |
-| `DRAWDB_PASSWORD` | **必填** | drawdb 部署的账户密码。缺失时进程会以退出码 1 结束，并在 stderr 打印提示。密码永远不会被打印出来。 |
+| `DRAWDB_MCP_KEY` | 推荐 | 专用 API Key（对应服务端环境变量 `MCP_KEY`），走 `Authorization: Bearer` 认证。账户密码无需出现在任何 MCP 配置里；Key 泄露单独轮换即可，不影响登录密码。 |
+| `DRAWDB_PASSWORD` | 备选 | 账户密码登录（未配置 Key 时使用）。两者必须至少设置一个。 |
 | `DRAWDB_URL` | 可选 | 部署的基础 URL，默认 `https://drawdb.mpga.me`。 |
 
 要求 Node 20+（使用全局 `fetch`、`crypto.randomUUID`、`structuredClone`）。首次运行前在 `mcp/` 目录执行一次 `npm install`。
@@ -18,13 +19,13 @@
 ### Claude Code
 
 ```bash
-claude mcp add drawdb --env DRAWDB_PASSWORD=<密码> -- node /home/peter/dev/drawsql/mcp/index.js
+claude mcp add drawdb --env DRAWDB_MCP_KEY=<KEY> -- node /home/peter/dev/drawsql/mcp/index.js
 ```
 
 加上 `--scope user` 可将其注册为全局可用（对所有项目生效）：
 
 ```bash
-claude mcp add drawdb --scope user --env DRAWDB_PASSWORD=<密码> -- node /home/peter/dev/drawsql/mcp/index.js
+claude mcp add drawdb --scope user --env DRAWDB_MCP_KEY=<KEY> -- node /home/peter/dev/drawsql/mcp/index.js
 ```
 
 如需指向不同部署，追加 `--env DRAWDB_URL=https://你的域名`。
@@ -35,7 +36,7 @@ claude mcp add drawdb --scope user --env DRAWDB_PASSWORD=<密码> -- node /home/
 [mcp_servers.drawdb]
 command = "node"
 args = ["/home/peter/dev/drawsql/mcp/index.js"]
-env = { DRAWDB_PASSWORD = "<密码>", DRAWDB_URL = "https://drawdb.mpga.me" }
+env = { DRAWDB_MCP_KEY = "<KEY>", DRAWDB_URL = "https://drawdb.mpga.me" }
 ```
 
 ## 工具列表
