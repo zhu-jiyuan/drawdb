@@ -2,7 +2,7 @@ name: Cloud image
 
 on:
   push:
-    branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
@@ -34,8 +34,8 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository }}-cloud
           tags: |
+            type=ref,event=tag
             type=raw,value=latest
-            type=sha
 
       - uses: docker/build-push-action@v6
         with:
@@ -47,33 +47,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-  # Opens a PR against the GitOps repo bumping the pinned image tag; merging
-  # it is what actually deploys (Argo CD auto-syncs k8s-deploy@master).
-  gitops-pr:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          repository: zhu-jiyuan/k8s-deploy
-          token: ${{ secrets.GITOPS_TOKEN }}
-
-      - name: Bump drawdb image tag
-        run: |
-          TAG="sha-$(echo '${{ github.sha }}' | cut -c1-7)"
-          sed -i "s|image: ghcr.io/zhu-jiyuan/drawdb-cloud:.*|image: ghcr.io/zhu-jiyuan/drawdb-cloud:${TAG}|" \
-            manifests/drawdb/app-deployment.yaml
-          git diff --stat
-
-      - uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITOPS_TOKEN }}
-          branch: bump/drawdb
-          base: master
-          commit-message: "Bump drawdb to ${{ github.sha }}"
-          title: "Bump drawdb image to sha-${{ github.sha }}"
-          body: |
-            Automated image bump from [zhu-jiyuan/drawdb@${{ github.sha }}](https://github.com/zhu-jiyuan/drawdb/commit/${{ github.sha }}).
-
-            Merging this PR deploys it (Argo CD auto-sync).
