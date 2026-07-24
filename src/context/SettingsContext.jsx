@@ -16,7 +16,7 @@ const defaultSettings = {
   tableWidth: tableWidth,
   showDebugCoordinates: false,
   showComments: false,
-  sketchMode: false,
+  sketchMode: true,
 };
 
 export const SettingsContext = createContext({
@@ -32,6 +32,13 @@ export default function SettingsContextProvider({ children }) {
     let baseSettings = savedSettings
       ? { ...defaultSettings, ...JSON.parse(savedSettings) }
       : defaultSettings;
+
+    // One-time flip to the Excalidraw look for settings saved before it
+    // became the default; the user's explicit choice sticks afterwards.
+    if (!localStorage.getItem("sketchDefaultApplied")) {
+      baseSettings = { ...baseSettings, sketchMode: true };
+      localStorage.setItem("sketchDefaultApplied", "1");
+    }
 
     const theme = searchParams.get(queryConfig.theme.key);
     if (queryConfig.theme.isValid(theme)) {
