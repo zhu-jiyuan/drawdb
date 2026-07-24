@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Spin, Tag } from "@douyinfe/semi-ui";
+import { Button, Popconfirm, Spin, Tag, Toast } from "@douyinfe/semi-ui";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,7 @@ import {
   formatSize,
   databaseName,
 } from "../components/EditorHeader/Modal/Open/diagram";
-import { cloudList } from "../cloud/sync";
+import { cloudList, cloudDelete } from "../cloud/sync";
 import { useCloudAuth } from "../cloud/authContext";
 import Login from "./Login";
 import logo from "../assets/logo_light_160.png";
@@ -54,6 +54,23 @@ function RecentDiagrams() {
         dir: "desc",
       });
 
+  const onDelete = async (entry) => {
+    try {
+      if (entry.source === "cloud") {
+        await cloudDelete(entry.diagramId);
+        setCloud((prev) =>
+          (prev ?? []).filter((d) => d.diagramId !== entry.diagramId),
+        );
+      } else {
+        // local-only row: leave any same-id cloud copy alone
+        await db.diagrams.where("diagramId").equals(entry.diagramId).delete();
+      }
+    } catch (err) {
+      console.error(err);
+      Toast.error(t("oops_smth_went_wrong"));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-100 p-6">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -85,9 +102,9 @@ function RecentDiagrams() {
         ) : (
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
             {entries.map((entry) => (
-              <button
+              <div
                 key={`${entry.source}:${entry.diagramId}`}
-                className="flex w-full items-center gap-4 border-b border-zinc-100 px-5 py-3.5 text-left last:border-b-0 hover:bg-zinc-50"
+                className="flex w-full cursor-pointer items-center gap-4 border-b border-zinc-100 px-5 py-3.5 text-left last:border-b-0 hover:bg-zinc-50"
                 onClick={() => navigate(`/editor/diagrams/${entry.diagramId}`)}
               >
                 <i className="bi bi-diagram-3 text-lg text-zinc-400" />
@@ -109,7 +126,25 @@ function RecentDiagrams() {
                     {t("cloud_source_local")}
                   </Tag>
                 )}
-              </button>
+                <span onClick={(e) => e.stopPropagation()}>
+                  <Popconfirm
+                    title={t("delete_diagram")}
+                    content={t("are_you_sure_delete_diagram")}
+                    okText={t("confirm")}
+                    cancelText={t("cancel")}
+                    position="left"
+                    onConfirm={() => onDelete(entry)}
+                  >
+                    <Button
+                      size="small"
+                      type="danger"
+                      theme="borderless"
+                      aria-label={t("delete_diagram")}
+                      icon={<i className="bi bi-trash" />}
+                    />
+                  </Popconfirm>
+                </span>
+              </div>
             ))}
           </div>
         )}
