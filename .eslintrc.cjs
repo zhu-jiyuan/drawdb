@@ -22,7 +22,7 @@ module.exports = {
   },
   overrides: [
     {
-      files: ["server/**/*.js"],
+      files: ["server/**/*.js", "mcp/**/*.js"],
       env: { node: true, browser: false },
     },
   ],
