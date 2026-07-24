@@ -55,6 +55,7 @@ export default function TablesTab() {
               open: true,
               id: k[0],
               element: ObjectType.TABLE,
+              editFromCanvas: false,
             }))
           }
           accordion

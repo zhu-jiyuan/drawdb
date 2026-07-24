@@ -191,26 +191,23 @@ export default function Table({
     addTable({ table: duplicated });
   };
 
+  // Always open the edit side sheet, sidebar visible or not — double-clicking
+  // a table should edit it in place, not just scroll the side panel.
+  // editFromCanvas distinguishes this from the panel's accordion, which sets
+  // the same open/element/id state but must not pop the sheet.
   const openEditor = () => {
-    if (!layout.sidebar) {
-      setSelectedElement((prev) => ({
-        ...prev,
-        element: ObjectType.TABLE,
-        id: tableData.id,
-        open: true,
-      }));
-    } else {
-      setSelectedElement((prev) => ({
-        ...prev,
-        currentTab: Tab.TABLES,
-        element: ObjectType.TABLE,
-        id: tableData.id,
-        open: true,
-      }));
-      if (selectedElement.currentTab !== Tab.TABLES) return;
+    setSelectedElement((prev) => ({
+      ...prev,
+      currentTab: Tab.TABLES,
+      element: ObjectType.TABLE,
+      id: tableData.id,
+      open: true,
+      editFromCanvas: true,
+    }));
+    if (layout.sidebar && selectedElement.currentTab === Tab.TABLES) {
       document
         .getElementById(`scroll_table_${tableData.id}`)
-        .scrollIntoView({ behavior: "smooth" });
+        ?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -476,12 +473,13 @@ export default function Table({
           selectedElement.element === ObjectType.TABLE &&
           selectedElement.id === tableData.id &&
           selectedElement.open &&
-          !layout.sidebar
+          (selectedElement.editFromCanvas || !layout.sidebar)
         }
         onCancel={() =>
           setSelectedElement((prev) => ({
             ...prev,
             open: !prev.open,
+            editFromCanvas: false,
           }))
         }
         style={{ paddingBottom: "16px" }}

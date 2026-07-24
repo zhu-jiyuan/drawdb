@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { layoutTables } from "../../../mcp/shapes.js";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import { createPortal } from "react-dom";
 import {
@@ -825,6 +826,13 @@ export default function ControlPanel({
   };
   const toggleDBMLEditor = () => {
     setLayout((prev) => ({ ...prev, dbmlEditor: !prev.dbmlEditor }));
+  };
+  // Same layered layout the MCP server uses (FK hierarchy, height-aware).
+  // Bulk position change like list reordering: not added to the undo stack.
+  const autoArrange = () => {
+    if (layout.readOnly) return;
+    setTables(layoutTables(structuredClone(tables), relationships));
+    setSaveState(State.SAVING);
   };
   const save = async () => {
     // Setting SAVING hands off to Workspace's save(): it knows diagramSource
@@ -1921,6 +1929,15 @@ export default function ControlPanel({
               disabled={layout.readOnly}
             >
               <IconAddNote />
+            </button>
+          </Tooltip>
+          <Tooltip content={t("auto_arrange")} position="bottom">
+            <button
+              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
+              onClick={autoArrange}
+              disabled={layout.readOnly}
+            >
+              <i className="bi bi-magic text-xl" />
             </button>
           </Tooltip>
           <Divider layout="vertical" margin="8px" />

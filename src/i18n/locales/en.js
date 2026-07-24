@@ -51,6 +51,7 @@ const en = {
       "Upload {{count}} local diagram(s) to the cloud and switch them to cloud storage. A backup zip is downloaded first. If the cloud already has a newer copy of a diagram, the cloud copy wins.",
     cloud_upload_done: "Uploaded {{uploaded}}, skipped {{skipped}} (cloud was newer)",
     cloud_recent_title: "Recent diagrams",
+    auto_arrange: "Auto arrange",
     cloud_mcp_key_title: "MCP Key",
     cloud_mcp_key_desc:
       "API key for AI assistants (Claude / Codex via the bundled MCP server). It only grants diagram access — it cannot log in or manage keys.",
