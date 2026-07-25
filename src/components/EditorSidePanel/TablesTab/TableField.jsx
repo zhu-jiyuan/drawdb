@@ -43,6 +43,11 @@ export default function TableField({ data, tid, index, inherited }) {
           onChange={(value) => updateField(tid, data.id, { name: value })}
           onFocus={(e) => setEditField({ name: e.target.value })}
           onBlur={(e) => {
+            // Reject an empty field name, matching the inline canvas rename.
+            if (e.target.value.trim() === "") {
+              updateField(tid, data.id, { name: editField.name });
+              return;
+            }
             if (e.target.value === editField.name) return;
             setUndoStack((prev) => [
               ...prev,

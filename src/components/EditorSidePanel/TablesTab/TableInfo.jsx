@@ -160,6 +160,12 @@ export default function TableInfo({ data }) {
           onChange={(value) => updateTable(data.id, { name: value })}
           onFocus={(e) => setEditField({ name: e.target.value })}
           onBlur={(e) => {
+            // Reject an empty name (the inline canvas rename already does);
+            // otherwise a title-less table syncs to the server.
+            if (e.target.value.trim() === "") {
+              updateTable(data.id, { name: editField.name });
+              return;
+            }
             if (e.target.value === editField.name) return;
             setUndoStack((prev) => [
               ...prev,

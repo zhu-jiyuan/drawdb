@@ -20,6 +20,8 @@ const state = {
   // set when a newer version was seen on the server while the editor is clean
   freshVersion: null,
   offline: false,
+  // set when a save was rejected because the diagram was deleted elsewhere
+  deletedRemotely: null,
 };
 
 const listeners = new Set();
@@ -111,6 +113,15 @@ async function flushOneLocked(diagramId) {
       force: mirror.force === true,
     }));
   } catch (err) {
+    // 410: the diagram was deleted elsewhere. Not transient — drop the local
+    // mirror instead of retrying (which used to resurrect it server-side).
+    if (err?.response?.status === 410) {
+      await db.cloudMirror.delete(diagramId);
+      versions.delete(diagramId);
+      state.deletedRemotely = diagramId;
+      notify();
+      return;
+    }
     if (err?.response?.status === 409) {
       await db.cloudMirror
         .where("diagramId")

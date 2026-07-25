@@ -831,7 +831,9 @@ export default function ControlPanel({
   // Bulk position change like list reordering: not added to the undo stack.
   const autoArrange = () => {
     if (layout.readOnly) return;
-    setTables(layoutTables(structuredClone(tables), relationships));
+    setTables(
+      layoutTables(structuredClone(tables), relationships, settings.tableWidth),
+    );
     setSaveState(State.SAVING);
   };
   const save = async () => {

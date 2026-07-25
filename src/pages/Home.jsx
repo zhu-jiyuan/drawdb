@@ -14,7 +14,8 @@ import { cloudList, cloudDelete } from "../cloud/sync";
 import { useCloudAuth } from "../cloud/authContext";
 import McpKeyModal from "../cloud/McpKeyModal";
 import Login from "./Login";
-import logo from "../assets/logo_light_160.png";
+import logoLight from "../assets/logo_light_160.png";
+import logoDark from "../assets/logo_dark_160.png";
 
 // The personal-fork homepage: the login form until authenticated, then the
 // recent-diagrams list. The stock landing page is unrouted.
@@ -88,7 +89,11 @@ function RecentDiagrams() {
     <div className="min-h-screen bg-[var(--semi-color-bg-1)] text-[var(--semi-color-text-0)] p-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4">
-          <img src={logo} alt="drawDB" className="h-9" />
+          <img src={
+            document.body.getAttribute("theme-mode") === "dark"
+              ? logoDark
+              : logoLight
+          } alt="drawDB" className="h-9" />
           <div className="flex gap-2">
             <Button
               icon={<i className="bi bi-key me-1" />}

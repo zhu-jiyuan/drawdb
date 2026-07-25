@@ -43,7 +43,11 @@ export default function TablesTab() {
       ) : (
         <Collapse
           activeKey={
-            selectedElement.open && selectedElement.element === ObjectType.TABLE
+            selectedElement.open &&
+            selectedElement.element === ObjectType.TABLE &&
+            // A canvas-initiated edit shows the side sheet; expanding here too
+            // would render the same form twice (and under the modal mask).
+            !selectedElement.editFromCanvas
               ? `${selectedElement.id}`
               : ""
           }

@@ -133,6 +133,11 @@ export default function Relationship({ data }) {
     const labelPoint = pathRef.current.getPointAtLength(pathLength / 2);
     labelX = labelPoint.x - (labelWidth ?? 0) / 2;
     labelY = labelPoint.y + (labelHeight ?? 0) / 2;
+    // On short connectors the midpoint label collides with the cardinality
+    // badges pinned near both ends; lift it clear instead of overlapping.
+    if (pathLength < cardinalityOffset * 2 + (labelWidth ?? 0)) {
+      labelY -= (labelHeight ?? 0) + 6;
+    }
 
     const point1 = pathRef.current.getPointAtLength(cardinalityOffset);
     cardinalityStartX = point1.x;

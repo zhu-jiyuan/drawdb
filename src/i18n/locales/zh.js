@@ -40,6 +40,7 @@ const zh = {
     cloud_use_server: "加载云端版本",
     cloud_keep_mine: "保留我的",
     cloud_fresh_banner: "云端有新版本",
+    cloud_deleted_remotely: "这张图已在其他设备上被删除",
     cloud_fresh_load: "加载",
     cloud_upload_local: "上传本地图表（{{count}}）",
     cloud_upload_local_desc:

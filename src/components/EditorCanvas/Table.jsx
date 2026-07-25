@@ -196,8 +196,9 @@ export default function Table({
       ...tableData,
       id: nanoid(),
       name: `${tableData.name}_copy`,
-      x: tableData.x + 24,
-      y: tableData.y + 24,
+      // Clear the original instead of overlapping it (cards are >=180px wide).
+      x: tableData.x + settings.tableWidth + 40,
+      y: tableData.y,
       fields: tableData.fields.map((f) => ({ ...f, id: nanoid() })),
       indices: tableData.indices.map((idx) => ({ ...idx, id: nanoid() })),
     };

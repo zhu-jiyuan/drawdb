@@ -84,23 +84,36 @@ function pruneFailures(ip, now) {
   return kept;
 }
 
-function isRateLimited(ip) {
+// Buckets are namespaced per mechanism ("pw:<ip>" / "mcp:<ip>") so failed
+// password guesses can't throttle a caller's valid API key, and vice versa.
+function isRateLimited(bucket) {
   const now = Date.now();
   globalFailures = globalFailures.filter((t) => now - t < RATE_WINDOW_MS);
-  if (globalFailures.length >= RATE_MAX_GLOBAL_FAILURES) return true;
-  return pruneFailures(ip, now).length >= RATE_MAX_FAILURES;
+  // The global ceiling tightens the per-bucket allowance instead of denying
+  // outright: strangers' failures must never lock out a caller whose own
+  // record is clean (that would be a trivial unauthenticated DoS).
+  const max =
+    globalFailures.length >= RATE_MAX_GLOBAL_FAILURES ? 1 : RATE_MAX_FAILURES;
+  return pruneFailures(bucket, now).length >= max;
 }
 
-function recordFailure(ip) {
+function recordFailure(bucket) {
   const now = Date.now();
-  const kept = pruneFailures(ip, now);
+  const kept = pruneFailures(bucket, now);
   kept.push(now);
-  failuresByIp.set(ip, kept);
+  failuresByIp.set(bucket, kept);
   globalFailures.push(now);
 }
 
-function clearFailures(ip) {
-  failuresByIp.delete(ip);
+function clearFailures(bucket) {
+  const list = failuresByIp.get(bucket);
+  failuresByIp.delete(bucket);
+  // A success also un-poisons this bucket's contribution to the global count,
+  // so one legitimate user can't stay collateral-damaged by their own typos.
+  if (list?.length) {
+    const drop = new Set(list);
+    globalFailures = globalFailures.filter((t) => !drop.has(t));
+  }
 }
 
 // The map only self-prunes on repeat visits from the same IP; sweep it so
@@ -125,13 +138,16 @@ export async function verifyMcpBearer(request) {
   if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
     return { ok: false, status: 401 };
   }
-  if (isRateLimited(request.ip)) {
-    return { ok: false, status: 429 };
-  }
+  // Evaluate throttling up front but apply it only when the credential turns
+  // out to be wrong: rejecting a *valid* key because someone else guessed
+  // badly would hand any anonymous client a denial-of-service lever.
+  const bucket = `mcp:${request.ip}`;
+  const limited = isRateLimited(bucket);
   const key = authHeader.slice("Bearer ".length);
   const keyHash = sha256Hex(key);
 
   if (MCP_KEY && crypto.timingSafeEqual(sha256Buf(key), sha256Buf(MCP_KEY))) {
+    clearFailures(bucket);
     return { ok: true }; // env-configured key (compose/simple deployments)
   }
 
@@ -153,11 +169,12 @@ export async function verifyMcpBearer(request) {
         .query("UPDATE mcp_keys SET last_used_at = now() WHERE id = 1")
         .catch((err) => request.log.warn({ err }, "mcp key touch failed"));
     }
+    clearFailures(bucket);
     return { ok: true }; // authenticated via UI-managed MCP key
   }
 
-  recordFailure(request.ip);
-  return { ok: false, status: 401 };
+  recordFailure(bucket);
+  return { ok: false, status: limited ? 429 : 401 };
 }
 
 export async function requireSession(request, reply) {
@@ -294,10 +311,10 @@ export function registerSecurityHooks(app) {
 // ---- routes ----------------------------------------------------------------
 
 async function login(request, reply) {
-  const ip = request.ip;
-  if (isRateLimited(ip)) {
-    return reply.code(429).send({ error: "too_many_attempts" });
-  }
+  // Throttling is decided up front but only applied to a WRONG password —
+  // the correct one always gets through, so guessing can't lock the owner out.
+  const bucket = `pw:${request.ip}`;
+  const limited = isRateLimited(bucket);
 
   const body = request.body && typeof request.body === "object" ? request.body : {};
   const password = typeof body.password === "string" ? body.password : "";
@@ -305,10 +322,12 @@ async function login(request, reply) {
   // Constant-time compare over fixed-length sha256 digests.
   const ok = crypto.timingSafeEqual(sha256Buf(password), sha256Buf(AUTH_PASSWORD));
   if (!ok) {
-    recordFailure(ip);
-    return reply.code(401).send({ error: "invalid_password" });
+    recordFailure(bucket);
+    return limited
+      ? reply.code(429).send({ error: "too_many_attempts" })
+      : reply.code(401).send({ error: "invalid_password" });
   }
-  clearFailures(ip);
+  clearFailures(bucket);
 
   const token = crypto.randomBytes(32).toString("base64url");
   const hash = sha256Hex(token);

@@ -27,7 +27,7 @@ export default function CloudOverlay() {
 
   if (auth.status === "anon") {
     return (
-      <div className="pointer-events-auto absolute bottom-16 left-3 z-20 md:bottom-3">
+      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 md:bottom-24">
         <Button
           size="small"
           icon={<i className="bi bi-cloud me-1" />}
@@ -47,6 +47,7 @@ export default function CloudOverlay() {
 function CloudControls() {
   const auth = useCloudAuth();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { saveState, setSaveState } = useSaveState();
   const [sync, setSync] = useState(() => ({ ...getSyncState() }));
   const [showMigrate, setShowMigrate] = useState(false);
@@ -131,7 +132,7 @@ function CloudControls() {
 
   return (
     <>
-      <div className="pointer-events-auto absolute bottom-16 left-3 z-20 md:bottom-3">
+      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 md:bottom-24">
         <Dropdown
           position="topLeft"
           render={
@@ -155,6 +156,18 @@ function CloudControls() {
           </div>
         </Dropdown>
       </div>
+
+      {sync.deletedRemotely === diagramId && (
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-50 flex justify-center">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-red-300 bg-red-50 px-5 py-1.5 shadow-md">
+            <i className="bi bi-exclamation-triangle text-red-600" />
+            <span className="text-sm">{t("cloud_deleted_remotely")}</span>
+            <Button size="small" theme="solid" onClick={() => navigate("/")}>
+              {t("cloud_recent_title")}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {showFresh && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-50 flex justify-center">

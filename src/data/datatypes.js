@@ -2255,5 +2255,9 @@ const dbToTypesBase = {
 };
 
 export const dbToTypes = new Proxy(dbToTypesBase, {
-  get: (target, prop) => (prop in target ? target[prop] : false),
+  // Fall back to the generic type table for an unknown/undefined dialect.
+  // Returning `false` made every downstream isSized/hasPrecision lookup fail
+  // silently, stripping sizes and default quoting instead of erroring.
+  get: (target, prop) =>
+    prop in target ? target[prop] : (target[DB.GENERIC] ?? false),
 });

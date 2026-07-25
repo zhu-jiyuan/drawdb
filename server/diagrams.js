@@ -145,8 +145,16 @@ async function putDiagram(request, reply) {
       }
     }
 
-    // Reviving a soft-deleted diagram: overwrite, archive nothing, bump version.
+    // Reviving a soft-deleted diagram requires explicit intent. Without this,
+    // a second device that still has the diagram open would silently undelete
+    // it on its next autosave.
     if (row.deleted_at !== null) {
+      if (body.restore !== true) {
+        await client.query("ROLLBACK");
+        return reply
+          .code(410)
+          .send({ error: "deleted", diagramId: id, version: row.version });
+      }
       const newVersion = row.version + 1;
       await client.query(
         `UPDATE diagrams

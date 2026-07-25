@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Button, Input, Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import logo from "../assets/logo_light_160.png";
+import logoLight from "../assets/logo_light_160.png";
+import logoDark from "../assets/logo_dark_160.png";
 import { login } from "../cloud/api";
 import { useCloudAuth } from "../cloud/authContext";
 
@@ -37,7 +38,11 @@ export default function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--semi-color-bg-1)] text-[var(--semi-color-text-0)] p-4">
       <div className="w-full max-w-sm space-y-6 rounded-xl border border-[var(--semi-color-border)] bg-[var(--semi-color-bg-2)] p-8 shadow-sm">
-        <img src={logo} alt="drawDB" className="mx-auto h-10" />
+        <img src={
+            document.body.getAttribute("theme-mode") === "dark"
+              ? logoDark
+              : logoLight
+          } alt="drawDB" className="mx-auto h-10" />
         <div className="text-center text-lg font-semibold">
           {t("cloud_login")}
         </div>

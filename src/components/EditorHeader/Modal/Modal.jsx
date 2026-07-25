@@ -66,6 +66,20 @@ export default function Modal({
   const [uncontrolledLanguage, setUncontrolledLanguage] = useState(
     i18n.language,
   );
+
+  // The embedded Monaco editor swallows keydown, so Semi's closeOnEsc never
+  // fires for the code-bearing modals. Listen in the capture phase instead.
+  useEffect(() => {
+    if (modal === MODAL.NONE) return undefined;
+    const onEsc = (e) => {
+      if (e.key !== "Escape") return;
+      if (modal === MODAL.RENAME) setUncontrolledTitle(title);
+      if (modal === MODAL.LANGUAGE) setUncontrolledLanguage(i18n.language);
+      setModal(MODAL.NONE);
+    };
+    window.addEventListener("keydown", onEsc, true);
+    return () => window.removeEventListener("keydown", onEsc, true);
+  }, [modal, setModal, title, i18n.language]);
   const [tempTableWidth, setTempTableWidth] = useState(settings.tableWidth);
   const [importSource, setImportSource] = useState({
     src: "",

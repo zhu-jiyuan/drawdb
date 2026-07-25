@@ -45,6 +45,7 @@ const en = {
     cloud_use_server: "Load cloud version",
     cloud_keep_mine: "Keep mine",
     cloud_fresh_banner: "A newer version exists in the cloud",
+    cloud_deleted_remotely: "This diagram was deleted on another device",
     cloud_fresh_load: "Load",
     cloud_upload_local: "Upload local diagrams ({{count}})",
     cloud_upload_local_desc:

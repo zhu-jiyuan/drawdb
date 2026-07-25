@@ -42,9 +42,9 @@ const DEFAULT_CONSTRAINT = "No action";
 
 // ---- layout ----------------------------------------------------------------
 
-// Editor render metrics (src/data/constants.js): tableWidth 220,
-// tableHeaderHeight 50, tableFieldHeight 36.
-const TABLE_WIDTH = 220;
+// Editor render metrics (src/data/constants.js): tableWidth default 240
+// (user-adjustable 180-520), tableHeaderHeight 50, tableFieldHeight 36.
+const TABLE_WIDTH = 240;
 const HEADER_H = 50;
 const FIELD_H = 36;
 const COL_GAP = 140;
@@ -60,7 +60,7 @@ function tableHeight(t) {
 // and within a column tables are ordered near their parents (barycenter) to
 // keep FK lines short and uncrossed. Height-aware, so tall tables never
 // overlap. Deterministic. Mutates x/y in place and returns the tables.
-export function layoutTables(tables, references) {
+export function layoutTables(tables, references, tableWidth = TABLE_WIDTH) {
   const ids = new Set(tables.map((t) => t.id));
   const parentsOf = new Map(tables.map((t) => [t.id, new Set()]));
   for (const r of references || []) {
@@ -118,7 +118,7 @@ export function layoutTables(tables, references) {
       y += tableHeight(t) + ROW_GAP;
       rowIndex.set(t.id, i);
     });
-    x += TABLE_WIDTH + COL_GAP;
+    x += tableWidth + COL_GAP;
   }
   return tables;
 }
@@ -520,21 +520,52 @@ export function applyOps(content, ops) {
   // 7. add_relationships
   if (ops.add_relationships && ops.add_relationships.length > 0) {
     for (const r of ops.add_relationships) {
-      content.references.push(normalizeRelationship(r, content.tables));
+      const rel = normalizeRelationship(r, content.tables);
+      const duplicate = content.references.some(
+        (x) =>
+          x.startTableId === rel.startTableId &&
+          x.startFieldId === rel.startFieldId &&
+          x.endTableId === rel.endTableId &&
+          x.endFieldId === rel.endFieldId,
+      );
+      if (duplicate) {
+        throw new Error(
+          `add_relationships: ${r.fromTable}.${r.fromField} → ${r.toTable}.${r.toField} already exists.`,
+        );
+      }
+      // Names are labels, not keys — de-collide so drop_relationships can
+      // address one unambiguously.
+      let name = rel.name;
+      let n = 2;
+      while (content.references.some((x) => x.name === name)) {
+        name = `${rel.name}_${n++}`;
+      }
+      rel.name = name;
+      content.references.push(rel);
     }
     summary.push(`added ${ops.add_relationships.length} relationship(s)`);
   }
 
   // 8. drop_relationships (by name)
   if (ops.drop_relationships && ops.drop_relationships.length > 0) {
+    let dropped = 0;
     for (const name of ops.drop_relationships) {
-      const before = content.references.length;
-      content.references = content.references.filter((r) => r.name !== name);
-      if (content.references.length === before) {
+      const matches = content.references.filter((r) => r.name === name);
+      if (matches.length === 0) {
         throw new Error(`drop_relationships: no relationship named "${name}".`);
       }
+      // Never mass-delete on a name collision — that silently destroys data.
+      if (matches.length > 1) {
+        throw new Error(
+          `drop_relationships: "${name}" is ambiguous (matches ${matches.length}).`,
+        );
+      }
+      content.references = content.references.filter(
+        (r) => r.id !== matches[0].id,
+      );
+      dropped += 1;
     }
-    summary.push(`dropped ${ops.drop_relationships.length} relationship(s)`);
+    summary.push(`dropped ${dropped} relationship(s)`);
   }
 
   // 9. auto_layout — recompute every table position from the FK hierarchy.

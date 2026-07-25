@@ -4,14 +4,16 @@ import { toDBML } from "../../utils/exportAs/dbml";
 import CodeEditor from "../CodeEditor";
 
 export default function DBMLEditor() {
-  const { tables: currentTables, relationships } = useDiagram();
+  const { tables: currentTables, relationships, database } = useDiagram();
   const diagram = useDiagram();
   const { enums } = useEnums();
   const [value, setValue] = useState(() => toDBML({ ...diagram, enums }));
 
   useEffect(() => {
-    setValue(toDBML({ tables: currentTables, enums, relationships }));
-  }, [currentTables, enums, relationships]);
+    // `database` is required: without it toDBML can't resolve type metadata and
+    // silently drops every size/precision and default quoting.
+    setValue(toDBML({ tables: currentTables, enums, relationships, database }));
+  }, [currentTables, enums, relationships, database]);
 
   return (
     <CodeEditor

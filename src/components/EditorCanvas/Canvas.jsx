@@ -480,13 +480,12 @@ export default function Canvas() {
     const pad = 40;
     const contentW = maxX - minX + pad * 2;
     const contentH = maxY - minY + pad * 2;
-    // Fit to the viewport, but don't shrink below 45% — a big schema fitted
-    // whole would be an unreadable speck; keep tables legible and let the user
-    // pan to the rest (one-finger drag works on touch).
-    const zoom = Math.max(
-      0.45,
-      Math.min(1, canvas.width / contentW, canvas.height / contentH),
-    );
+    // Fit the content, preferring legibility: don't shrink below 45% (an
+    // unreadable speck helps nobody — pan reaches the rest). But when even
+    // 45% can't show anything useful, honour the true fit ratio instead of
+    // opening onto a blank canvas.
+    const fit = Math.min(1, canvas.width / contentW, canvas.height / contentH);
+    const zoom = fit >= 0.45 ? fit : Math.max(fit, 0.25);
     // transform.pan is the diagram point shown at the viewport CENTER
     // (viewBox.left = pan.x - viewBoxSize/2), so center on the content's
     // bounding-box center — not its top-left corner.
