@@ -1,4 +1,4 @@
-import { createContext, useEffect, useRef, useState } from "react";
+import { createContext, useState } from "react";
 import { Action, ObjectType } from "../data/constants";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
