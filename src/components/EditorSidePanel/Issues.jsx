@@ -23,13 +23,13 @@ export default function Issues() {
         enums: enums,
       });
 
-      if (!arrayIsEqual(newIssues, issues)) {
-        setIssues(newIssues);
-      }
+      // Compare inside the updater: depending on `issues` here made this
+      // effect re-run on its own output, walking every table twice per change.
+      setIssues((prev) => (arrayIsEqual(newIssues, prev) ? prev : newIssues));
     };
 
     findIssues();
-  }, [tables, relationships, issues, types, database, enums]);
+  }, [tables, relationships, types, database, enums]);
 
   return (
     <Collapse lazyRender keepDOM={false} style={{ width: "100%" }}>

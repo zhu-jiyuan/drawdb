@@ -5,9 +5,12 @@ import CodeEditor from "../CodeEditor";
 
 export default function DBMLEditor() {
   const { tables: currentTables, relationships, database } = useDiagram();
-  const diagram = useDiagram();
   const { enums } = useEnums();
-  const [value, setValue] = useState(() => toDBML({ ...diagram, enums }));
+  // Same shape as the effect below, which replaces this on mount anyway — the
+  // initial value only exists so the first paint is not blank.
+  const [value, setValue] = useState(() =>
+    toDBML({ tables: currentTables, enums, relationships, database }),
+  );
 
   useEffect(() => {
     // `database` is required: without it toDBML can't resolve type metadata and
@@ -20,7 +23,6 @@ export default function DBMLEditor() {
       showCopyButton
       value={value}
       language="dbml"
-      onChange={setValue}
       height="100%"
       options={{
         readOnly: true,

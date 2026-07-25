@@ -2,7 +2,7 @@ import { createContext, useEffect, useRef, useState } from "react";
 import { Action, ObjectType } from "../data/constants";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
-import { useUndoRedo, useCollab } from "../hooks";
+import { useUndoRedo } from "../hooks";
 import { nanoid } from "nanoid";
 
 export const EnumsContext = createContext(null);
@@ -11,23 +11,6 @@ export default function EnumsContextProvider({ children }) {
   const { t } = useTranslation();
   const [enums, setEnums] = useState([]);
   const { setUndoStack, setRedoStack } = useUndoRedo();
-  const { emitDelta, isApplyingRemoteRef } = useCollab();
-  const firstRun = useRef(true);
-
-  useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-      return;
-    }
-    if (isApplyingRemoteRef?.current) return;
-    emitDelta({
-      target: "enums",
-      action: "update",
-      entityId: "enums",
-      data: [enums],
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enums]);
 
   const addEnum = (data, addToHistory = true) => {
     const newEnum = {
@@ -98,7 +81,6 @@ export default function EnumsContextProvider({ children }) {
         addEnum,
         updateEnum,
         deleteEnum,
-        enumsCount: enums.length,
       }}
     >
       {children}

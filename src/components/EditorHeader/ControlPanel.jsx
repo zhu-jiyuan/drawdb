@@ -107,7 +107,7 @@ export default function ControlPanel({
   const [showEditName, setShowEditName] = useState(false);
   const [importDb, setImportDb] = useState("");
   const [exportData, setExportData] = useState({
-    data: null,
+    data: "",
     filename: `${title}_${new Date().toISOString()}`,
     extension: "",
   });
@@ -374,9 +374,9 @@ export default function ControlPanel({
       if (a.element === ObjectType.TABLE) {
         addTable(a.data, false);
       } else if (a.element === ObjectType.AREA) {
-        addArea(null, false);
+        addArea(a.data, false);
       } else if (a.element === ObjectType.NOTE) {
-        addNote(null, false);
+        addNote(a.data, false);
       } else if (a.element === ObjectType.RELATIONSHIP) {
         addRelationship(a.data, false);
       } else if (a.element === ObjectType.TYPE) {
@@ -506,7 +506,7 @@ export default function ControlPanel({
               .map((t, i) => ({ ...t, id: i })),
           });
         } else if (a.component === "self") {
-          updateTable(a.tid, a.redo, false);
+          updateTable(a.tid, a.redo);
         }
       } else if (a.element === ObjectType.RELATIONSHIP) {
         updateRelationship(a.rid, a.redo);
@@ -809,7 +809,7 @@ export default function ControlPanel({
           y: obj.y + 20,
           id: areas.length,
         });
-      } else if (v.validate(obj, noteSchema)) {
+      } else if (v.validate(obj, noteSchema).valid) {
         addNote({
           ...obj,
           x: obj.x + 20,
@@ -893,11 +893,6 @@ export default function ControlPanel({
       try {
         await extensions.cloudSave(diagramData, { isNew: true });
       } catch (err) {
-        if (err?.response?.status === 402) {
-          setSaveState(State.NONE);
-          navigate("/checkout?tier=solo_pro");
-          return;
-        }
         setSaveState(State.ERROR);
         Toast.error(t("oops_smth_went_wrong"));
         return;

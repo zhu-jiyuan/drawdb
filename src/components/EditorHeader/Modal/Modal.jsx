@@ -291,7 +291,7 @@ export default function Modal({
         );
       case MODAL.CODE:
       case MODAL.IMG:
-        if (exportData.data !== "" || exportData.data) {
+        if (exportData.data) {
           return (
             <>
               {modal === MODAL.IMG ? (

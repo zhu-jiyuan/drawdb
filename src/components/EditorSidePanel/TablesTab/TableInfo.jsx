@@ -330,7 +330,7 @@ export default function TableInfo({ data }) {
               placeholder={t("comment")}
               rows={1}
               onChange={(value) =>
-                updateTable(data.id, { comment: value }, false)
+                updateTable(data.id, { comment: value })
               }
               onFocus={(e) => setEditField({ comment: e.target.value })}
               onBlur={(e) => {

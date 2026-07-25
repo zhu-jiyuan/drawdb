@@ -2,7 +2,7 @@ import { Toast } from "@douyinfe/semi-ui";
 import { createContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Action, ObjectType, defaultBlue } from "../data/constants";
-import { useSelect, useTransform, useUndoRedo, useCollab } from "../hooks";
+import { useSelect, useTransform, useUndoRedo } from "../hooks";
 
 export const AreasContext = createContext(null);
 
@@ -12,8 +12,6 @@ export default function AreasContextProvider({ children }) {
   const { transform } = useTransform();
   const { selectedElement, setSelectedElement } = useSelect();
   const { setUndoStack, setRedoStack } = useUndoRedo();
-  const { emitDelta, isApplyingRemoteRef } = useCollab();
-  const shouldEmit = () => !isApplyingRemoteRef?.current;
 
   const addArea = (data, addToHistory = true) => {
     let created = data;
@@ -44,18 +42,13 @@ export default function AreasContextProvider({ children }) {
         {
           action: Action.ADD,
           element: ObjectType.AREA,
+          // Redo needs the object back: without it, redo built a fresh one at
+          // the current pan centre and the name, colour and size were lost.
+          data: created,
           message: t("add_area"),
         },
       ]);
       setRedoStack([]);
-    }
-    if (shouldEmit() && created) {
-      emitDelta({
-        target: "area",
-        action: "create",
-        entityId: created.id,
-        data: [created],
-      });
     }
   };
 
@@ -84,14 +77,6 @@ export default function AreasContextProvider({ children }) {
         open: false,
       }));
     }
-    if (shouldEmit()) {
-      emitDelta({
-        target: "area",
-        action: "delete",
-        entityId: id,
-        data: [id],
-      });
-    }
   };
 
   const updateArea = (id, values) => {
@@ -106,14 +91,6 @@ export default function AreasContextProvider({ children }) {
         return t;
       }),
     );
-    if (shouldEmit()) {
-      emitDelta({
-        target: "area",
-        action: "update",
-        entityId: id,
-        data: [id, values],
-      });
-    }
   };
 
   return (
@@ -124,7 +101,6 @@ export default function AreasContextProvider({ children }) {
         updateArea,
         addArea,
         deleteArea,
-        areasCount: areas.length,
       }}
     >
       {children}

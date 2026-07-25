@@ -5,7 +5,7 @@ import {
   defaultNoteTheme,
   noteWidth,
 } from "../data/constants";
-import { useUndoRedo, useTransform, useSelect, useCollab } from "../hooks";
+import { useUndoRedo, useTransform, useSelect } from "../hooks";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
 
@@ -17,8 +17,6 @@ export default function NotesContextProvider({ children }) {
   const { transform } = useTransform();
   const { setUndoStack, setRedoStack } = useUndoRedo();
   const { selectedElement, setSelectedElement } = useSelect();
-  const { emitDelta, isApplyingRemoteRef } = useCollab();
-  const shouldEmit = () => !isApplyingRemoteRef?.current;
 
   const addNote = (data, addToHistory = true) => {
     let created = data;
@@ -49,18 +47,13 @@ export default function NotesContextProvider({ children }) {
         {
           action: Action.ADD,
           element: ObjectType.NOTE,
+          // Redo needs the object back: without it, redo built a fresh one at
+          // the current pan centre and the name, colour and size were lost.
+          data: created,
           message: t("add_note"),
         },
       ]);
       setRedoStack([]);
-    }
-    if (shouldEmit() && created) {
-      emitDelta({
-        target: "note",
-        action: "create",
-        entityId: created.id,
-        data: [created],
-      });
     }
   };
 
@@ -89,14 +82,6 @@ export default function NotesContextProvider({ children }) {
         open: false,
       }));
     }
-    if (shouldEmit()) {
-      emitDelta({
-        target: "note",
-        action: "delete",
-        entityId: id,
-        data: [id],
-      });
-    }
   };
 
   const updateNote = useCallback(
@@ -112,17 +97,8 @@ export default function NotesContextProvider({ children }) {
           return t;
         }),
       );
-      if (shouldEmit()) {
-        emitDelta({
-          target: "note",
-          action: "update",
-          entityId: id,
-          data: [id, values],
-        });
-      }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [emitDelta],
+    [],
   );
 
   return (
@@ -133,7 +109,6 @@ export default function NotesContextProvider({ children }) {
         updateNote,
         addNote,
         deleteNote,
-        notesCount: notes.length,
       }}
     >
       {children}

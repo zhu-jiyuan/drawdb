@@ -12,7 +12,6 @@ import { CLEAR_EDITOR_COMMAND } from "lexical";
 import { Link } from "react-router-dom";
 import { socials } from "../data/socials";
 import { send } from "../api/email";
-import { useThemedPage } from "../hooks";
 
 function Form({ theme }) {
   const [editor] = useLexicalComposerContext();
@@ -131,7 +130,6 @@ export default function BugReport() {
     document.body.setAttribute("class", "theme");
   }, []);
 
-  useThemedPage();
 
   return (
     <>

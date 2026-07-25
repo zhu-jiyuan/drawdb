@@ -1,4 +1,4 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useEffect, useState, useLayoutEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { tableWidth } from "../data/constants";
 import { queryConfig } from "../utils/queryConfig";
@@ -48,7 +48,10 @@ export default function SettingsContextProvider({ children }) {
     return baseSettings;
   });
 
-  useEffect(() => {
+  // Before paint, so a dark-mode reload never flashes the light theme. This
+  // used to be duplicated by a useThemedPage hook that pages called on top of
+  // the provider; the provider is the only writer now.
+  useLayoutEffect(() => {
     document.body.setAttribute("theme-mode", settings.mode);
   }, [settings.mode]);
 

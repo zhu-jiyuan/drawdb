@@ -1,6 +1,6 @@
 import { createContext, useCallback, useState } from "react";
 import { Action, DB, ObjectType, defaultBlue } from "../data/constants";
-import { useTransform, useUndoRedo, useSelect, useCollab } from "../hooks";
+import { useTransform, useUndoRedo, useSelect } from "../hooks";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
 import { nanoid } from "nanoid";
@@ -10,30 +10,14 @@ export const DiagramContext = createContext(null);
 
 export default function DiagramContextProvider({ children }) {
   const { t } = useTranslation();
-  const [database, setDatabaseRaw] = useState(DB.GENERIC);
+  const [database, setDatabase] = useState(DB.GENERIC);
   const [tables, setTables] = useState([]);
   const [relationships, setRelationships] = useState([]);
   const { transform } = useTransform();
   const { setUndoStack, setRedoStack } = useUndoRedo();
   const { selectedElement, setSelectedElement } = useSelect();
-  const { emitDelta, isApplyingRemoteRef } = useCollab();
 
-  const shouldEmit = () => !isApplyingRemoteRef?.current;
 
-  const setDatabase = useCallback(
-    (next) => {
-      setDatabaseRaw(next);
-      if (!isApplyingRemoteRef?.current) {
-        emitDelta({
-          target: "database",
-          action: "update",
-          entityId: "database",
-          data: [next],
-        });
-      }
-    },
-    [emitDelta, isApplyingRemoteRef],
-  );
 
   const addTable = (data, addToHistory = true) => {
     const id = nanoid();
@@ -92,15 +76,6 @@ export default function DiagramContextProvider({ children }) {
       ]);
       setRedoStack([]);
     }
-    if (shouldEmit()) {
-      const created = data?.table ?? newTable;
-      emitDelta({
-        target: "table",
-        action: "create",
-        entityId: created.id,
-        data: [created],
-      });
-    }
   };
 
   const deleteTable = (id, addToHistory = true) => {
@@ -141,28 +116,12 @@ export default function DiagramContextProvider({ children }) {
         open: false,
       }));
     }
-    if (shouldEmit()) {
-      emitDelta({
-        target: "table",
-        action: "delete",
-        entityId: id,
-        data: [id],
-      });
-    }
   };
 
   const updateTable = (id, updatedValues) => {
     setTables((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updatedValues } : t)),
     );
-    if (shouldEmit()) {
-      emitDelta({
-        target: "table",
-        action: "update",
-        entityId: id,
-        data: [id, updatedValues],
-      });
-    }
   };
 
   const updateField = (tid, fid, updatedValues) => {
@@ -179,14 +138,6 @@ export default function DiagramContextProvider({ children }) {
         return table;
       }),
     );
-    if (shouldEmit()) {
-      emitDelta({
-        target: "table",
-        action: "update",
-        entityId: tid,
-        data: [tid, fid, updatedValues],
-      });
-    }
   };
 
   const deleteField = (field, tid, addToHistory = true) => {
@@ -255,15 +206,6 @@ export default function DiagramContextProvider({ children }) {
         return temp;
       });
     }
-    if (shouldEmit()) {
-      const created = data?.relationship ?? data;
-      emitDelta({
-        target: "relationship",
-        action: "create",
-        entityId: created.id,
-        data: [created],
-      });
-    }
   };
 
   const deleteRelationship = (id, addToHistory = true) => {
@@ -286,14 +228,6 @@ export default function DiagramContextProvider({ children }) {
       setRedoStack([]);
     }
     setRelationships((prev) => prev.filter((e) => e.id !== id));
-    if (shouldEmit()) {
-      emitDelta({
-        target: "relationship",
-        action: "delete",
-        entityId: id,
-        data: [id],
-      });
-    }
     if (
       selectedElement.element === ObjectType.RELATIONSHIP &&
       selectedElement.id === id
@@ -311,14 +245,6 @@ export default function DiagramContextProvider({ children }) {
     setRelationships((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updatedValues } : t)),
     );
-    if (shouldEmit()) {
-      emitDelta({
-        target: "relationship",
-        action: "update",
-        entityId: id,
-        data: [id, updatedValues],
-      });
-    }
   };
 
   return (
@@ -338,8 +264,6 @@ export default function DiagramContextProvider({ children }) {
         updateRelationship,
         database,
         setDatabase,
-        tablesCount: tables.length,
-        relationshipsCount: relationships.length,
       }}
     >
       {children}

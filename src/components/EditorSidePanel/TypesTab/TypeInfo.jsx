@@ -107,7 +107,7 @@ export default function TypeInfo({ index, data }) {
                 placeholder={t("comment")}
                 rows={1}
                 onChange={(value) =>
-                  updateType(typeId, { comment: value }, false)
+                  updateType(typeId, { comment: value })
                 }
                 onFocus={(e) => setEditField({ comment: e.target.value })}
                 onBlur={(e) => {

@@ -6,18 +6,13 @@ import SelectContextProvider from "../context/SelectContext";
 import AreasContextProvider from "../context/AreasContext";
 import NotesContextProvider from "../context/NotesContext";
 import TypesContextProvider from "../context/TypesContext";
-import SettingsContextProvider from "../context/SettingsContext";
 import SaveStateContextProvider from "../context/SaveStateContext";
 import EnumsContextProvider from "../context/EnumsContext";
 import WorkSpace from "../components/Workspace";
-import { useThemedPage } from "../hooks";
 
 export default function Editor() {
-  useThemedPage();
-
   return (
-    <SettingsContextProvider>
-      <LayoutContextProvider>
+    <LayoutContextProvider>
         <TransformContextProvider>
           <UndoRedoContextProvider>
             <SelectContextProvider>
@@ -37,7 +32,6 @@ export default function Editor() {
             </SelectContextProvider>
           </UndoRedoContextProvider>
         </TransformContextProvider>
-      </LayoutContextProvider>
-    </SettingsContextProvider>
+    </LayoutContextProvider>
   );
 }

@@ -31,11 +31,11 @@ export default function SidePanel({ width, resize, setResize }) {
   const { layout, setLayout } = useLayout();
   const { settings } = useSettings();
   const { selectedElement, setSelectedElement } = useSelect();
-  const { database, tablesCount, relationshipsCount } = useDiagram();
-  const { areasCount } = useAreas();
-  const { notesCount } = useNotes();
-  const { typesCount } = useTypes();
-  const { enumsCount } = useEnums();
+  const { database, tables, relationships } = useDiagram();
+  const { areas } = useAreas();
+  const { notes } = useNotes();
+  const { types } = useTypes();
+  const { enums } = useEnums();
   const { t } = useTranslation();
 
   // The panel follows the selection: pick something on the canvas and its
@@ -47,22 +47,22 @@ export default function SidePanel({ width, resize, setResize }) {
   const tabList = useMemo(() => {
     const tabs = [
       {
-        tab: `${t("tables")} (${tablesCount})`,
+        tab: `${t("tables")} (${tables.length})`,
         itemKey: Tab.TABLES,
         component: <TablesTab />,
       },
       {
-        tab: `${t("relationships")} (${relationshipsCount})`,
+        tab: `${t("relationships")} (${relationships.length})`,
         itemKey: Tab.RELATIONSHIPS,
         component: <RelationshipsTab />,
       },
       {
-        tab: `${t("subject_areas")} (${areasCount})`,
+        tab: `${t("subject_areas")} (${areas.length})`,
         itemKey: Tab.AREAS,
         component: <AreasTab />,
       },
       {
-        tab: `${t("notes")} (${notesCount})`,
+        tab: `${t("notes")} (${notes.length})`,
         itemKey: Tab.NOTES,
         component: <NotesTab />,
       },
@@ -70,7 +70,7 @@ export default function SidePanel({ width, resize, setResize }) {
 
     if (databases[database].hasTypes) {
       tabs.push({
-        tab: `${t("types")} (${typesCount})`,
+        tab: `${t("types")} (${types.length})`,
         itemKey: Tab.TYPES,
         component: <TypesTab />,
       });
@@ -78,7 +78,7 @@ export default function SidePanel({ width, resize, setResize }) {
 
     if (databases[database].hasEnums) {
       tabs.push({
-        tab: `${t("enums")} (${enumsCount})`,
+        tab: `${t("enums")} (${enums.length})`,
         itemKey: Tab.ENUMS,
         component: <EnumsTab />,
       });
@@ -88,12 +88,12 @@ export default function SidePanel({ width, resize, setResize }) {
   }, [
     t,
     database,
-    tablesCount,
-    relationshipsCount,
-    areasCount,
-    typesCount,
-    enumsCount,
-    notesCount,
+    tables.length,
+    relationships.length,
+    areas.length,
+    types.length,
+    enums.length,
+    notes.length,
   ]);
 
   const setDbmlEditor = (value) => {
@@ -140,14 +140,14 @@ export default function SidePanel({ width, resize, setResize }) {
           <div className="flex items-center gap-3 text-xs text-color ms-2 opacity-60">
             <div className="flex items-center gap-1.5" title={t("tables")}>
               <IconTable />
-              <span>{tablesCount}</span>
+              <span>{tables.length}</span>
             </div>
             <div
               className="flex items-center gap-1.5"
               title={t("relationships")}
             >
               <IconRelationship />
-              <span>{relationshipsCount}</span>
+              <span>{relationships.length}</span>
             </div>
           </div>
           <div className="segmented-bg inline-flex items-center p-0.5 rounded-sm text-xs">

@@ -159,11 +159,6 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
         setLastSaved(new Date().toLocaleString());
       } catch (err) {
         console.warn("cloud autosave failed:", err);
-        if (err?.response?.status === 402) {
-          setSaveState(State.NONE);
-          navigate("/checkout?tier=solo_pro");
-          return;
-        }
         setSaveState(State.ERROR);
       }
       return;
@@ -519,7 +514,6 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           title={title}
           setTitle={setTitle}
           lastSaved={lastSaved}
-          setLastSaved={setLastSaved}
           toolbarContainer={toolbarContainer}
         />
       </IdContext.Provider>
@@ -567,7 +561,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
               </Button>
             </div>
           )}
-          {(cloudOnly || typeof extensions.moveToCloudUpgrade === "function") &&
+          {cloudOnly &&
             diagramSource === "local" &&
             !version &&
             !dismissedBanners.has(`move:${loadedDiagramId}`) && (
@@ -582,7 +576,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
                     size="small"
                     theme="solid"
                     onClick={
-                      cloudOnly ? moveToCloud : extensions.moveToCloudUpgrade
+                      moveToCloud
                     }
                   >
                     Move

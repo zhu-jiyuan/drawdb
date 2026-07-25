@@ -1,6 +1,6 @@
 import { createContext, useEffect, useRef, useState } from "react";
 import { Action, ObjectType } from "../data/constants";
-import { useUndoRedo, useCollab } from "../hooks";
+import { useUndoRedo } from "../hooks";
 import { Toast } from "@douyinfe/semi-ui";
 import { useTranslation } from "react-i18next";
 import { nanoid } from "nanoid";
@@ -11,23 +11,6 @@ export default function TypesContextProvider({ children }) {
   const { t } = useTranslation();
   const [types, setTypes] = useState([]);
   const { setUndoStack, setRedoStack } = useUndoRedo();
-  const { emitDelta, isApplyingRemoteRef } = useCollab();
-  const firstRun = useRef(true);
-
-  useEffect(() => {
-    if (firstRun.current) {
-      firstRun.current = false;
-      return;
-    }
-    if (isApplyingRemoteRef?.current) return;
-    emitDelta({
-      target: "types",
-      action: "update",
-      entityId: "types",
-      data: [types],
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [types]);
 
   const addType = (data, addToHistory = true) => {
     const id = nanoid();
@@ -112,7 +95,6 @@ export default function TypesContextProvider({ children }) {
         addType,
         updateType,
         deleteType,
-        typesCount: types.length,
       }}
     >
       {children}
