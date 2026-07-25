@@ -1,6 +1,6 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { layoutTables } from "../../utils/tableLayout";
+import { layoutTables } from "../../../shared/tableLayout";
 import { getRequiredTableWidth } from "../../utils/tableWidth";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import { createPortal } from "react-dom";

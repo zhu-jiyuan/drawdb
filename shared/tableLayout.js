@@ -1,11 +1,11 @@
 // Relationship-aware table layout, shared by the editor's Auto arrange and the
 // MCP server's table placement.
 //
-// This lived in mcp/shapes.js, which the editor imported across the package
-// boundary. That module also imports nanoid at its top level, so the browser
-// bundle pulled in mcp/node_modules/nanoid@6 alongside the app's own 5.1.16.
-// The geometry itself is pure, so it belongs here and mcp re-exports it — the
-// dependency now points from the server package into the app, not the reverse.
+// It lived in mcp/shapes.js, which the editor imported across the package
+// boundary. It cannot live under src/ either: the runtime image ships only
+// mcp/, server/ and dist/, so an mcp -> src import resolves in the repo and
+// crashes in the container. shared/ is the one place both the browser bundle
+// and the MCP server can reach, and Dockerfile.cloud copies it in.
 
 // Editor render metrics (src/data/constants.js): tableWidth default 240
 // (user-adjustable 180-520), tableHeaderHeight 50, tableFieldHeight 36.

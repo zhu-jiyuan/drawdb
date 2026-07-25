@@ -41,7 +41,7 @@ const DEFAULT_CARDINALITY = "many_to_one";
 const DEFAULT_CONSTRAINT = "No action";
 
 // ---- layout ----------------------------------------------------------------
-import { layoutTables, gridPosition } from "../src/utils/tableLayout.js";
+import { layoutTables, gridPosition } from "../shared/tableLayout.js";
 
 export { layoutTables, gridPosition };
 
