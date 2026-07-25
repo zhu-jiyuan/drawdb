@@ -19,7 +19,10 @@ const WEIGHTS = {
 };
 
 // Extra search terms for commands whose label does not contain the word people
-// actually type. Keyed by command id, matched against on top of the label.
+// actually type. Keyed by command id — note that a leaf may instead carry its
+// own `keywords`/`weight`, which wins. Co-locating on the leaf is the better
+// home: these dotted paths are also i18n keys, so renaming one silently drops
+// its entry here with no error.
 const KEYWORDS = {
   "file.new": "create blank diagram",
   "file.open": "recent diagrams list",
@@ -77,11 +80,18 @@ export function flattenMenu(menu, t) {
           const childName = child.name ?? child.title ?? "";
           if (!childName) continue;
           nested.push({
-            id: `${id}.${String(childName).toLowerCase().replace(/\s+/g, "_")}`,
+            // Slugged display names collide: two diagrams both called
+            // "Untitled diagram" produced one command id, so the recents map
+            // and the React keys merged them. Children may carry their own id.
+            id: child.id
+              ? `${id}.${child.id}`
+              : `${id}.${String(childName).toLowerCase().replace(/\s+/g, "_")}`,
             group: `${sectionLabel} › ${entryLabel}`,
             label: String(childName),
             hint: child.label ? String(child.label) : undefined,
-            keywords: [KEYWORDS[id], entryLabel].filter(Boolean).join(" "),
+            keywords: [child.keywords ?? KEYWORDS[id], entryLabel]
+              .filter(Boolean)
+              .join(" "),
             shortcut: child.shortcut,
             disabled: !!child.disabled,
             state: child.state,
@@ -100,12 +110,12 @@ export function flattenMenu(menu, t) {
         id,
         group: sectionLabel,
         label: entryLabel,
-        keywords: KEYWORDS[id],
+        keywords: entry.keywords ?? KEYWORDS[id],
         shortcut: entry.shortcut,
         disabled: !!entry.disabled,
         state: entry.state,
         warning: entry.warning,
-        weight: WEIGHTS[id],
+        weight: entry.weight ?? WEIGHTS[id],
         run: entry.function,
       });
     }

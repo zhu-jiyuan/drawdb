@@ -2,8 +2,6 @@ import JSZip from "jszip";
 import { db } from "../data/db";
 import { saveAs } from "file-saver";
 
-const zip = new JSZip();
-
 const formatDiagram = (diagram) => {
   const formattedDiagram = { ...diagram };
   formattedDiagram.relationships = diagram.references;
@@ -15,7 +13,18 @@ const formatDiagram = (diagram) => {
   return formattedDiagram;
 };
 
+/**
+ * Downloads a zip of every locally saved diagram and custom template.
+ *
+ * Resolves only once the file has actually been handed to the browser. That
+ * matters because the cloud migration awaits this and then calls
+ * `db.diagrams.clear()` — it used to resolve as soon as zip generation was
+ * *started*, so the backup guarding an irreversible delete guaranteed nothing.
+ */
 export async function exportSavedData() {
+  // Built per call: a module-level JSZip accumulates, so a second export would
+  // ship the first export's files too.
+  const zip = new JSZip();
   const diagramsFolder = zip.folder("diagrams");
 
   await db.diagrams.each((diagram) => {
@@ -36,11 +45,10 @@ export async function exportSavedData() {
     return true;
   });
 
-  zip.generateAsync({ type: "blob" }).then(function (content) {
-    const date = new Date();
-    saveAs(
-      content,
-      `${date.getFullYear()}_${date.getMonth()}_${date.getDay()}_export.zip`,
-    );
-  });
+  const content = await zip.generateAsync({ type: "blob" });
+  const date = new Date();
+  saveAs(
+    content,
+    `${date.getFullYear()}_${date.getMonth()}_${date.getDay()}_export.zip`,
+  );
 }

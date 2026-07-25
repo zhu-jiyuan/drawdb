@@ -23,7 +23,6 @@ import {
   Tag,
   Button,
   ButtonGroup,
-  SideSheet,
   Divider,
   Select,
 } from "@douyinfe/semi-ui";
@@ -38,7 +37,6 @@ import {
   useTransform,
   useFontsReady,
 } from "../../hooks";
-import TableInfo from "../EditorSidePanel/TablesTab/TableInfo";
 import { useTranslation } from "react-i18next";
 import { getCustomTypesForDb, resolveType } from "../../utils/customTypes";
 import { fieldUpdatesForTypeChange } from "../../utils/fieldTypeChange";
@@ -83,7 +81,7 @@ export default function Table({
   const [editingName, setEditingName] = useState(false);
   const [editingFieldId, setEditingFieldId] = useState(null);
   const [editingTypeFieldId, setEditingTypeFieldId] = useState(null);
-  const { layout } = useLayout();
+  const { layout, setLayout } = useLayout();
   const {
     database,
     tables,
@@ -373,10 +371,9 @@ export default function Table({
     },
   });
 
-  // Always open the edit side sheet, sidebar visible or not — double-clicking
-  // a table should edit it in place, not just scroll the side panel.
-  // editFromCanvas distinguishes this from the panel's accordion, which sets
-  // the same open/element/id state but must not pop the sheet.
+  // Selecting the table is enough to edit it: the side panel is an inspector
+  // that follows the selection. If the panel is hidden there is nowhere for the
+  // properties to appear, so show it rather than leaving the click inert.
   const openEditor = () => {
     setSelectedElement((prev) => ({
       ...prev,
@@ -384,13 +381,8 @@ export default function Table({
       element: ObjectType.TABLE,
       id: tableData.id,
       open: true,
-      editFromCanvas: true,
     }));
-    if (layout.sidebar && selectedElement.currentTab === Tab.TABLES) {
-      document
-        .getElementById(`scroll_table_${tableData.id}`)
-        ?.scrollIntoView({ behavior: "smooth" });
-    }
+    if (!layout.sidebar) setLayout((prev) => ({ ...prev, sidebar: true }));
   };
 
   const getFieldReference = (fieldData) => {
@@ -749,28 +741,6 @@ export default function Table({
         </div>
       </foreignObject>
       </g>
-      <SideSheet
-        title={t("edit")}
-        size="small"
-        visible={
-          selectedElement.element === ObjectType.TABLE &&
-          selectedElement.id === tableData.id &&
-          selectedElement.open &&
-          (selectedElement.editFromCanvas || !layout.sidebar)
-        }
-        onCancel={() =>
-          setSelectedElement((prev) => ({
-            ...prev,
-            open: !prev.open,
-            editFromCanvas: false,
-          }))
-        }
-        style={{ paddingBottom: "16px" }}
-      >
-        <div className="sidesheet-theme">
-          <TableInfo data={tableData} />
-        </div>
-      </SideSheet>
     </>
   );
 

@@ -744,3 +744,74 @@ foreignObject .field-type {
     display: none;
   }
 }
+
+/* ── Selection inspector ────────────────────────────────────────────────────
+   The side panel used to be a browser: lists of every table, relationship,
+   area and note, with the object you were actually working on buried inside
+   one of them. It now shows the selection instead, so the thing in front of
+   you and the controls for it are in the same place. */
+
+.inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.inspector-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--canvas-hair);
+}
+
+.inspector-back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  color: var(--canvas-ink2);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.inspector-back:hover {
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.inspector-back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.inspector-title {
+  min-width: 0;
+}
+
+.inspector-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--canvas-ink);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.inspector-kind {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--canvas-ink3);
+}
+
+.inspector-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 10px;
+}

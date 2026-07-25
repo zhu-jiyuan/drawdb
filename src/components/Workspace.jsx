@@ -486,7 +486,12 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
     notes?.length,
     types?.length,
     relationships?.length,
-    transform.zoom,
+    // Viewport state is deliberately absent. `transform.zoom` used to be here,
+    // so every zoom step was a full-diagram PUT: a version bump plus a row in
+    // diagram_revisions, which keeps only the newest 30 (server/diagrams.js).
+    // Roughly thirty zoom steps therefore evicted every real revision the user
+    // had. `transform.pan` was already excluded, so pan and zoom now agree —
+    // the viewport rides along with the next content save instead of being one.
     title,
     gistId,
     setSaveState,

@@ -964,6 +964,7 @@ export default function ControlPanel({
           ...(recentlyOpenedDiagrams && recentlyOpenedDiagrams.length > 0
             ? [
                 ...recentlyOpenedDiagrams.map((diagram) => ({
+                  id: diagram.diagramId,
                   name: diagram.name,
                   label: DateTime.fromJSDate(new Date(diagram.lastModified))
                     .setLocale(i18n.language)
@@ -1551,6 +1552,11 @@ export default function ControlPanel({
         function: viewFieldSummary,
         shortcut: "Ctrl+Shift+F",
       },
+      fit_window: {
+        function: fitWindow,
+        shortcut: "Ctrl+Alt+W",
+        keywords: "zoom fit all center",
+      },
       reset_view: {
         function: resetView,
         shortcut: "Enter/Return",
@@ -1752,17 +1758,7 @@ export default function ControlPanel({
   // palette showing a stale toggle or an action disabled after it became
   // available. `menu` itself is already rebuilt each render, so walking its ~70
   // entries adds nothing measurable.
-  const commands = [
-    ...flattenMenu(menu, t),
-    {
-      id: "view.fit_window",
-      group: t("view"),
-      label: t("fit_window"),
-      keywords: "zoom fit all center reset",
-      shortcut: "Ctrl+Alt+W",
-      run: fitWindow,
-    },
-  ];
+  const commands = flattenMenu(menu, t);
 
   useHotkeys("mod+k", (e) => { e.preventDefault(); setPaletteOpen(true); }, {
     enableOnFormTags: true,

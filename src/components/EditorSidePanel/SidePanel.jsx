@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Tabs, TabPane } from "@douyinfe/semi-ui";
 import { IconCode, IconList } from "@douyinfe/semi-icons";
 import { IconTable, IconRelationship } from "../../icons";
-import { Tab } from "../../data/constants";
+import { ObjectType, Tab } from "../../data/constants";
 import {
   useLayout,
   useSelect,
@@ -25,6 +25,7 @@ import EnumsTab from "./EnumsTab/EnumsTab";
 import { isRtl } from "../../i18n/utils/rtl";
 import i18n from "../../i18n/i18n";
 import DBMLEditor from "./DBMLEditor";
+import Inspector from "./Inspector";
 
 export default function SidePanel({ width, resize, setResize }) {
   const { layout, setLayout } = useLayout();
@@ -36,6 +37,12 @@ export default function SidePanel({ width, resize, setResize }) {
   const { typesCount } = useTypes();
   const { enumsCount } = useEnums();
   const { t } = useTranslation();
+
+  // The panel follows the selection: pick something on the canvas and its
+  // properties replace the browse lists, so there is one place to edit rather
+  // than a list to hunt through.
+  const hasSelection =
+    selectedElement.element !== ObjectType.NONE && selectedElement.id !== -1;
 
   const tabList = useMemo(() => {
     const tabs = [
@@ -102,6 +109,8 @@ export default function SidePanel({ width, resize, setResize }) {
         <div className="h-full flex-1 overflow-y-auto">
           {layout.dbmlEditor ? (
             <DBMLEditor />
+          ) : hasSelection ? (
+            <Inspector />
           ) : (
             <Tabs
               type="card"

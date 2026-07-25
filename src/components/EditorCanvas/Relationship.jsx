@@ -11,8 +11,6 @@ import {
   useFontsReady,
 } from "../../hooks";
 import { useTranslation } from "react-i18next";
-import { SideSheet } from "@douyinfe/semi-ui";
-import RelationshipInfo from "../EditorSidePanel/RelationshipsTab/RelationshipInfo";
 import {
   getVisibleFieldIndex,
   getVisibleFields,
@@ -294,27 +292,6 @@ export default function Relationship({ data }) {
           </>
         )}
       </g>
-      <SideSheet
-        title={t("edit")}
-        size="small"
-        visible={
-          selectedElement.element === ObjectType.RELATIONSHIP &&
-          selectedElement.id === data.id &&
-          selectedElement.open &&
-          !layout.sidebar
-        }
-        onCancel={() => {
-          setSelectedElement((prev) => ({
-            ...prev,
-            open: false,
-          }));
-        }}
-        style={{ paddingBottom: "16px" }}
-      >
-        <div className="sidesheet-theme">
-          <RelationshipInfo data={data} />
-        </div>
-      </SideSheet>
     </>
   );
 }
