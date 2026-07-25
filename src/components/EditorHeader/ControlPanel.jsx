@@ -1836,16 +1836,6 @@ export default function ControlPanel({
         <div className="flex justify-start items-center">
           <LayoutDropdown />
           <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("zoom_out")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-lg"
-              onClick={() =>
-                setTransform((prev) => ({ ...prev, zoom: prev.zoom / 1.2 }))
-              }
-            >
-              <i className="fa-solid fa-magnifying-glass-minus" />
-            </button>
-          </Tooltip>
           <Dropdown
             style={{ width: "240px" }}
             position={isRtl(i18n.language) ? "bottomRight" : "bottomLeft"}
@@ -1899,16 +1889,6 @@ export default function ControlPanel({
               </div>
             </div>
           </Dropdown>
-          <Tooltip content={t("zoom_in")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-lg"
-              onClick={() =>
-                setTransform((prev) => ({ ...prev, zoom: prev.zoom * 1.2 }))
-              }
-            >
-              <i className="fa-solid fa-magnifying-glass-plus" />
-            </button>
-          </Tooltip>
           <Divider layout="vertical" margin="8px" />
           <Tooltip content={t("undo")} position="bottom">
             <button

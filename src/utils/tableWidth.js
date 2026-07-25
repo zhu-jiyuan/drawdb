@@ -14,25 +14,28 @@ const GRIP = 10 + 8; // grip dot + gap-2
 const CLUSTER_GAP = 4; // gap-1 between the name and type clusters
 const KEY_ICON = 20; // primary-key glyph + its gap
 const NULL_GLYPH = 12; // "?" nullable marker + its gap
+const CHIP_PADDING = 20; // the type chip's px-2 on both sides
 const DELETE_BTN = 34; // revealed on hover — budget it so nothing shifts/overlaps
 const HEADER_ACTIONS = 104; // lock / collapse / more buttons revealed on hover
 const SAFETY = 6; // hinting/subpixel slack
 const MAX_WIDTH = 640;
 
 // The canvas inherits the body font-size (16px); sketch mode swaps the family
-// via CSS (see index.css). Keep this in sync with that rule.
+// via CSS (see index.css). Keep these in sync with Table.jsx.
 const FONT_SIZE = 16;
+const TITLE_SIZE = 20;
+const TYPE_SIZE = 13;
 const SKETCH_STACK =
   '"Excalifont", "Segoe Print", "Bradley Hand", "KaiTi", "STKaiti", "Kaiti SC", cursive';
 
 let ctx = null;
 let ctxFontKey = "";
 
-function measure(text, weight, family) {
+function measure(text, weight, family, size = FONT_SIZE) {
   if (!text) return 0;
   if (typeof document === "undefined") return String(text).length * 8;
   if (!ctx) ctx = document.createElement("canvas").getContext("2d");
-  const key = `${weight} ${FONT_SIZE}px ${family}`;
+  const key = `${weight} ${size}px ${family}`;
   if (ctxFontKey !== key) {
     ctx.font = key;
     ctxFontKey = key;
@@ -69,12 +72,16 @@ export function getRequiredTableWidth(table, database, settings) {
 
   // Header: bold title + room for the hover action buttons.
   let widest =
-    ROW_PADDING + measure(table.name, "bold", family) + HEADER_ACTIONS;
+    ROW_PADDING +
+    measure(table.name, "bold", family, TITLE_SIZE) +
+    HEADER_ACTIONS;
 
   for (const field of table.fields ?? []) {
     let right = DELETE_BTN;
     if (showTypes) {
-      right += measure(typeLabel(database, field), "normal", family);
+      right +=
+        measure(typeLabel(database, field), "normal", family, TYPE_SIZE) +
+        CHIP_PADDING;
       if (field.primary) right += KEY_ICON;
       if (!field.notNull) right += NULL_GLYPH;
     }

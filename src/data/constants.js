@@ -4,26 +4,48 @@ export const noteWidth = 180;
 export const noteRadius = 3;
 export const noteFold = 24;
 export const darkBgTheme = "#16161A";
-// Excalidraw's palette — deeper and calmer than Tailwind's neon -500 ramp,
-// so type labels sit alongside the hand-drawn cards instead of shouting.
-// A dark-mode brightness lift lives in index.css.
-export const stringColor = "text-[#e8590c]";
-export const intColor = "text-[#1971c2]";
-export const decimalColor = "text-[#2f9e44]";
-export const booleanColor = "text-[#6741d9]";
-export const binaryColor = "text-[#087f5b]";
-export const enumSetColor = "text-[#1098ad]";
-export const documentColor = "text-[#5f3dc4]";
-export const networkIdColor = "text-[#e03131]";
-export const geometricColor = "text-[#ae3ec9]";
-export const vectorColor = "text-[#495057]";
-export const otherColor = "text-[#868e96]";
-export const dateColor = "text-[#0c8599]";
-export const tableHeaderHeight = 50;
+// Type-label palette. Rendered as chips (pale wash + deep ink), so each entry
+// carries the hue for the background and an ink colour dark enough to clear
+// WCAG AA on that wash — the plain saturated colours used before sat at
+// 3.3-4.4:1 on paper, which was the readability problem.
+export const typeColors = {
+  string: { hue: "#e8590c", ink: "#a03800" },
+  int: { hue: "#1971c2", ink: "#12507f" },
+  decimal: { hue: "#2f9e44", ink: "#1d6b2d" },
+  boolean: { hue: "#6741d9", ink: "#4a2ea8" },
+  binary: { hue: "#087f5b", ink: "#0a5c44" },
+  enumSet: { hue: "#1098ad", ink: "#0a5f6d" },
+  document: { hue: "#5f3dc4", ink: "#452b91" },
+  networkId: { hue: "#e03131", ink: "#a51f1f" },
+  geometric: { hue: "#ae3ec9", ink: "#7c2b90" },
+  vector: { hue: "#495057", ink: "#343a40" },
+  other: { hue: "#868e96", ink: "#495057" },
+  date: { hue: "#0c8599", ink: "#08616f" },
+};
+
+export const stringColor = typeColors.string.hue;
+export const intColor = typeColors.int.hue;
+export const decimalColor = typeColors.decimal.hue;
+export const booleanColor = typeColors.boolean.hue;
+export const binaryColor = typeColors.binary.hue;
+export const enumSetColor = typeColors.enumSet.hue;
+export const documentColor = typeColors.document.hue;
+export const networkIdColor = typeColors.networkId.hue;
+export const geometricColor = typeColors.geometric.hue;
+export const vectorColor = typeColors.vector.hue;
+export const otherColor = typeColors.other.hue;
+export const dateColor = typeColors.date.hue;
+
+// Ink lookup by hue, so a resolved type colour maps to its readable text tone.
+export const typeInk = Object.fromEntries(
+  Object.values(typeColors).map((c) => [c.hue.toLowerCase(), c.ink]),
+);
+
+export const tableHeaderHeight = 56;
 export const tableWidth = 240;
 export const gridSize = 24;
 export const gridCircleRadius = 0.85;
-export const tableFieldHeight = 36;
+export const tableFieldHeight = 40;
 export const tableColorStripHeight = 7;
 export const pngExportPixelRatio = 4;
 export const minAreaSize = 120;

@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import { Cardinality, ObjectType, Tab } from "../../data/constants";
 import { calcPath, calcCompositePath } from "../../utils/calcPath";
 import { getRequiredTableWidth } from "../../utils/tableWidth";
+import { roughPath, seedFrom } from "../../utils/roughShapes";
 import {
   useDiagram,
   useSettings,
@@ -154,7 +155,8 @@ export default function Relationship({ data }) {
   let labelWidth = labelRef.current?.getBBox().width ?? 0;
   let labelHeight = labelRef.current?.getBBox().height ?? 0;
 
-  const cardinalityOffset = 28;
+  // Far enough along the curve to clear the card edge and its type labels.
+  const cardinalityOffset = 40;
 
   if (composite) {
     labelX = composite.labelPoint.x - (labelWidth ?? 0) / 2;
@@ -210,44 +212,60 @@ export default function Relationship({ data }) {
 
   if (!pathValues) return null;
 
+  const pathD = composite
+    ? composite.path
+    : calcPath(
+        pathValues,
+        settings.tableWidth,
+        1,
+        settings.showComments,
+        endpointWidths,
+      );
+  // Hand-drawn strokes, seeded per relationship so they don't jitter.
+  const sketchStrokes = settings.sketchMode
+    ? roughPath(pathD, seedFrom(data.id))
+    : null;
+  // Tint the connector with the child table's colour so a dense diagram reads
+  // as groups of related cards rather than a grey web.
+  const lineColor =
+    tables.find((t) => t.id === data.startTableId)?.color || "#8b8b8b";
+
   return (
     <>
       <g className="select-none group" onDoubleClick={edit}>
         {/* invisible wider path for better hover ux */}
         <path
-          d={
-            composite
-              ? composite.path
-              : calcPath(
-                  pathValues,
-                  settings.tableWidth,
-                  1,
-                  settings.showComments,
-                  endpointWidths,
-                )
-          }
+          d={pathD}
           fill="none"
           stroke="transparent"
-          strokeWidth={12}
+          strokeWidth={14}
           cursor="pointer"
         />
-        <path
-          ref={pathRef}
-          d={
-            composite
-              ? composite.path
-              : calcPath(
-                  pathValues,
-                  settings.tableWidth,
-                  1,
-                  settings.showComments,
-                  endpointWidths,
-                )
-          }
-          className="relationship-path"
-          fill="none"
-          cursor="pointer"
-        />
+        {sketchStrokes ? (
+          <>
+            {/* geometry reference for label/cardinality placement */}
+            <path ref={pathRef} d={pathD} fill="none" stroke="none" />
+            {sketchStrokes.map((d, i) => (
+              <path
+                key={i}
+                d={d}
+                className="relationship-path"
+                style={{ stroke: lineColor }}
+                fill="none"
+                cursor="pointer"
+              />
+            ))}
+          </>
+        ) : (
+          <path
+            ref={pathRef}
+            d={pathD}
+            className="relationship-path"
+            style={{ stroke: lineColor }}
+            fill="none"
+            cursor="pointer"
+          />
+        )}
         {settings.showRelationshipLabels && (
           <text
             x={labelX}
@@ -256,7 +274,7 @@ export default function Relationship({ data }) {
             fontSize={labelFontSize}
             fontWeight={500}
             ref={labelRef}
-            className="group-hover:fill-sky-600"
+            className="relationship-label"
           >
             {data.name}
           </text>

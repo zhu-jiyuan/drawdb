@@ -5,6 +5,7 @@ import {
   ObjectType,
   tableHeaderHeight,
   tableColorStripHeight,
+  typeInk,
 } from "../../data/constants";
 import {
   IconChevronDown,
@@ -43,11 +44,18 @@ import { useTranslation } from "react-i18next";
 import { getCustomTypesForDb, resolveType } from "../../utils/customTypes";
 import { fieldUpdatesForTypeChange } from "../../utils/fieldTypeChange";
 import { getRequiredTableWidth } from "../../utils/tableWidth";
+import {
+  roughCard,
+  roughFill,
+  roughRule,
+  seedFrom,
+} from "../../utils/roughShapes";
 import { dbToTypes } from "../../data/datatypes";
 import { isRtl } from "../../i18n/utils/rtl";
 import i18n from "../../i18n/i18n";
 import {
   getCommentHeight,
+  getFieldHeight,
   getFieldOffsetY,
   getTableHeight,
   getVisibleFieldEntries,
@@ -103,7 +111,13 @@ export default function Table({
   // Cards size themselves to their content: settings.tableWidth is the floor
   // (raised by the resize handle), and a table grows past it rather than
   // truncating a field name or type.
+
+  // Cards size themselves to their content: settings.tableWidth is the floor
+  // (raised by the resize handle), and a table grows past it rather than
+  // truncating a field name or type.
   const fontsTick = useFontsReady();
+  const seed = useMemo(() => seedFrom(tableData.id), [tableData.id]);
+
   const cardWidth = useMemo(
     () => getRequiredTableWidth(tableData, database, settings),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -122,10 +136,36 @@ export default function Table({
     [tableData, relationships],
   );
 
+  // Y positions for the hand-drawn rules: under the header, then between rows.
+  const rowSeparatorYs = useMemo(() => {
+    if (!settings.sketchMode) return [];
+    const ys = [];
+    let y =
+      tableHeaderHeight +
+      getCommentHeight(tableData.comment, cardWidth, settings.showComments);
+    ys.push(y);
+    for (let i = 0; i < visibleFieldEntries.length - 1; i++) {
+      y += getFieldHeight(
+        visibleFieldEntries[i].field,
+        cardWidth,
+        settings.showComments,
+      );
+      ys.push(y);
+    }
+    return ys;
+  }, [
+    settings.sketchMode,
+    settings.showComments,
+    tableData.comment,
+    cardWidth,
+    visibleFieldEntries,
+  ]);
+
   const visibleFields = useMemo(
     () => getVisibleFields(tableData, relationships),
     [tableData, relationships],
   );
+
 
   const isSelected = useMemo(() => {
     return (
@@ -378,25 +418,75 @@ export default function Table({
 
   return (
     <>
+      <g className="group" onPointerDown={onPointerDown}>
+      {settings.sketchMode && (
+        <g
+          transform={`translate(${tableData.x}, ${tableData.y})`}
+          className="pointer-events-none"
+        >
+          {/* paper */}
+          {roughFill(cardWidth, height, seed).map((d, i) => (
+            <path
+              key={`bg${i}`}
+              d={d}
+              fill={settings.mode === "light" ? "#fdfdff" : "#27272a"}
+              stroke="none"
+            />
+          ))}
+          {/* header wash in the table's own hue */}
+          {roughFill(cardWidth, tableHeaderHeight, seed + 1).map((d, i) => (
+            <path
+              key={`hd${i}`}
+              d={d}
+              fill={tint(tableData.color, settings.mode === "light" ? 0.16 : 0.3)}
+              stroke="none"
+            />
+          ))}
+          {/* header underline + row separators */}
+          {rowSeparatorYs.map((y, i) =>
+            roughRule(6, y, cardWidth - 6, seed + 2 + i).map((d, j) => (
+              <path
+                key={`sep${i}-${j}`}
+                d={d}
+                fill="none"
+                stroke={tint(tableData.color, 0.5)}
+                strokeWidth={1}
+                strokeLinecap="round"
+              />
+            )),
+          )}
+          {/* outline, drawn twice like a pencil pass */}
+          {roughCard(cardWidth, height, seed).map((d, i) => (
+            <path
+              key={`ol${i}`}
+              d={d}
+              fill="none"
+              stroke={isSelected ? "#6965db" : tableData.color}
+              strokeWidth={isSelected ? 2 : 1.3}
+              strokeLinecap="round"
+            />
+          ))}
+        </g>
+      )}
       <foreignObject
         key={tableData.id}
         x={tableData.x}
         y={tableData.y}
         width={cardWidth}
         height={height}
-        className="group drop-shadow-lg rounded-md cursor-move"
-        onPointerDown={onPointerDown}
+        className={`${settings.sketchMode ? "" : "drop-shadow-lg"} rounded-md cursor-move`}
       >
         <div
           onDoubleClick={openEditor}
-          className={`relative border-2 select-none rounded-lg w-full ${
-            settings.mode === "light" ? "text-zinc-800" : "text-zinc-200"
-          }`}
+          className={`relative select-none rounded-lg w-full ${
+            settings.sketchMode ? "border-0" : "border-2"
+          } ${settings.mode === "light" ? "text-zinc-800" : "text-zinc-200"}`}
           style={{
             direction: "ltr",
             borderColor: isSelected ? "#6965db" : tableData.color,
-            backgroundColor:
-              settings.mode === "light"
+            backgroundColor: settings.sketchMode
+              ? "transparent"
+              : settings.mode === "light"
                 ? tint(tableData.color, 0.05)
                 : "rgb(39 39 42)",
           }}
@@ -413,31 +503,37 @@ export default function Table({
               <div className="h-full w-[3px] bg-[#6965db]/30 group-hover:bg-[#6965db]/70 group-hover:w-[4px]" />
             </div>
           )}
-          <div
-            className="h-[6px] w-full rounded-t-md"
-            style={{ backgroundColor: tableData.color }}
-          />
+          {!settings.sketchMode && (
+            <div
+              className="h-[6px] w-full rounded-t-md"
+              style={{ backgroundColor: tableData.color }}
+            />
+          )}
           <div
             className={`${visibleFieldEntries.length === 0 ? "rounded-b-md" : ""} ${
               tableData.comment && settings.showComments ? "pb-3" : ""
             }`}
-            style={{
-              backgroundColor: tint(
-                tableData.color,
-                settings.mode === "light" ? 0.14 : 0.28,
-              ),
-              borderBottom:
-                visibleFieldEntries.length === 0
-                  ? "none"
-                  : `1px solid ${tint(tableData.color, 0.45)}`,
-            }}
+            style={
+              settings.sketchMode
+                ? undefined
+                : {
+                    backgroundColor: tint(
+                      tableData.color,
+                      settings.mode === "light" ? 0.14 : 0.28,
+                    ),
+                    borderBottom:
+                      visibleFieldEntries.length === 0
+                        ? "none"
+                        : `1px solid ${tint(tableData.color, 0.45)}`,
+                  }
+            }
           >
             <div
-              className={`overflow-hidden font-bold h-[40px] flex justify-between items-center gap-2`}
+              className={`overflow-hidden font-bold text-[20px] h-[46px] flex justify-between items-center gap-2`}
             >
               <div
-                className="px-3 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1"
-                onDoubleClick={(e) => {
+                className="px-3 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 cursor-text"
+                onClick={(e) => {
                   if (layout.readOnly) return;
                   e.stopPropagation();
                   setEditingName(true);
@@ -579,13 +675,13 @@ export default function Table({
                     >
                       <p className="me-4 font-bold">{e.name}</p>
                       <p
-                        className={
-                          "ms-4 font-mono " +
-                          (resolved.isCustom ? "" : resolved.color)
-                        }
-                        style={
-                          resolved.isCustom ? { color: resolved.color } : {}
-                        }
+                        className="ms-4 rounded-md px-2 py-[1px] text-[13px]"
+                        style={{
+                          backgroundColor: tint(resolved.color, 0.16),
+                          color:
+                            typeInk[String(resolved.color).toLowerCase()] ??
+                            resolved.color,
+                        }}
                       >
                         {e.type +
                           ((resolved.isSized || resolved.hasPrecision) &&
@@ -653,6 +749,7 @@ export default function Table({
           })}
         </div>
       </foreignObject>
+      </g>
       <SideSheet
         title={t("edit")}
         size="small"
@@ -686,7 +783,7 @@ export default function Table({
         className="group w-full overflow-hidden"
         style={{
           borderBottom:
-            index === visibleFields.length - 1
+            settings.sketchMode || index === visibleFields.length - 1
               ? "none"
               : `1px solid ${tint(tableData.color, 0.25)}`,
         }}
@@ -713,15 +810,8 @@ export default function Table({
           // https://stackoverflow.com/a/70976017/1137077
           e.target.releasePointerCapture(e.pointerId);
         }}
-        onDoubleClick={(e) => {
-          // Anywhere on the row except the name span (which edits the name
-          // and stops propagation): edit the field's type in place.
-          if (layout.readOnly) return;
-          e.stopPropagation();
-          setEditingTypeFieldId(fieldData.id);
-        }}
       >
-        <div className="h-[36px] px-2 py-1 flex justify-between items-center gap-1">
+        <div className="h-[40px] px-2 py-1 flex justify-between items-center gap-1">
           <div
             className={`${
               hoveredField === index ? "text-zinc-400" : ""
@@ -761,9 +851,9 @@ export default function Table({
               }}
             />
             <span
-              className="whitespace-nowrap overflow-hidden text-ellipsis"
+              className="whitespace-nowrap overflow-hidden text-ellipsis cursor-text"
               title={fieldData.name}
-              onDoubleClick={(e) => {
+              onClick={(e) => {
                 if (layout.readOnly) return;
                 e.stopPropagation();
                 setEditingFieldId(fieldData.id);
@@ -783,7 +873,16 @@ export default function Table({
               )}
             </span>
           </div>
-          <div className="text-zinc-400 flex items-center gap-1 shrink-0">
+          <div
+            className="text-zinc-400 flex items-center gap-1 shrink-0"
+            onClick={(e) => {
+              // Click the type to change it; blank row space stays free for
+              // selecting and dragging the card.
+              if (layout.readOnly || editingTypeFieldId === fieldData.id) return;
+              e.stopPropagation();
+              setEditingTypeFieldId(fieldData.id);
+            }}
+          >
             {editingTypeFieldId === fieldData.id ? (
               <div
                 className="w-[130px]"
@@ -814,17 +913,20 @@ export default function Table({
                 {settings.showDataTypes && (
                   <div className="flex gap-1 items-center">
                     {fieldData.primary && <IconKeyStroked />}
-                    {!fieldData.notNull && <span className="font-mono">?</span>}
+                    {!fieldData.notNull && (
+                      <span className="text-[13px] text-zinc-500">?</span>
+                    )}
+                    {/* Type as a chip: pale wash of its hue with deep ink, so
+                        the secondary information stays readable without
+                        competing with the field name. */}
                     <span
-                      className={
-                        "font-mono " +
-                        (fieldResolved.isCustom ? "" : fieldResolved.color)
-                      }
-                      style={
-                        fieldResolved.isCustom
-                          ? { color: fieldResolved.color }
-                          : {}
-                      }
+                      className="rounded-md px-2 py-[1px] text-[13px] whitespace-nowrap"
+                      style={{
+                        backgroundColor: tint(fieldResolved.color, 0.16),
+                        color:
+                          typeInk[String(fieldResolved.color).toLowerCase()] ??
+                          fieldResolved.color,
+                      }}
                     >
                       {fieldData.type +
                         ((fieldResolved.isSized || fieldResolved.hasPrecision) &&

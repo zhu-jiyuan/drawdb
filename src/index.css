@@ -267,31 +267,16 @@
     cursive !important;
 }
 
-/* Hand-drawn wobble uses an SVG displacement filter. Mobile GPUs render it
-   badly on thin strokes (relationship lines look broken / "drifting") and it's
-   costly, so the wobble is desktop-only (fine pointer + real hover); touch
-   devices keep just the hand-drawn font. */
-@media (hover: hover) and (pointer: fine) {
-  .sketch-mode path.relationship-path,
-  .sketch-mode .sketch-shape {
-    filter: url(#sketch-filter);
-  }
-  .sketch-mode foreignObject > div {
-    filter: url(#sketch-filter);
-  }
-}
+/* The hand-drawn look now comes from real roughjs paths (see
+   utils/roughShapes.js), not an SVG displacement filter — so it renders
+   identically on phones, where the filter used to break thin strokes. */
 
 /* table cards in sketch mode: rounded outline + single soft sketch shadow
    (neutralize the heavy tailwind drop-shadow so it reads hand-drawn) */
 .sketch-mode foreignObject > div {
   border-radius: 6px;
 }
-.sketch-mode foreignObject.drop-shadow-lg {
-  filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.12));
-}
-body[theme-mode="dark"] .sketch-mode foreignObject.drop-shadow-lg {
-  filter: drop-shadow(2px 3px 0px rgba(0, 0, 0, 0.4));
-}
+
 
 /* ---- Excalidraw-style app skin (whole UI, not just the canvas) ------------- */
 
@@ -374,4 +359,23 @@ body[theme-mode="dark"] .editor-toolbar > div {
    so they keep contrast without going neon in light mode. */
 body[theme-mode="dark"] foreignObject .font-mono {
   filter: brightness(1.45) saturate(0.9);
+}
+
+/* Relationship name labels are reference information, not the main event:
+   keep them out of the way until the connector is hovered. */
+.relationship-label {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+.group:hover .relationship-label {
+  opacity: 1;
+}
+
+/* Connectors are tinted per relationship (inline stroke); the hover state
+   only thickens them so the colour survives. */
+.group:hover .relationship-path {
+  stroke-width: 4;
+  stroke-dasharray: none;
+  animation: none;
 }

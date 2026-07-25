@@ -64,84 +64,32 @@ export function calcPath(
     tableHeaderHeight +
     tableFieldHeight / 2;
 
-  let radius = 10 * zoom;
-  const midX = (x2 + x1 + startW) / 2;
-  const endX = x2 + endW < x1 ? x2 + endW : x2;
+  // Pick the edge of each card that faces the other one, then join the two
+  // anchors with a horizontal cubic bezier — smooth, hand-drawable curves
+  // instead of mechanical right-angle elbows.
+  const startCenter = x1 + startW / 2;
+  const endCenter = x2 + endW / 2;
+  const startFromRight = startCenter <= endCenter;
+  const sx = startFromRight ? x1 + startW : x1;
+  const ex = startFromRight ? x2 : x2 + endW;
 
-  if (Math.abs(y1 - y2) <= 36 * zoom) {
-    radius = Math.abs(y2 - y1) / 3;
-    if (radius <= 2) {
-      if (x1 + startW <= x2) return `M ${x1 + startW} ${y1} L ${x2} ${y2 + 0.1}`;
-      else if (x2 + endW < x1)
-        return `M ${x1} ${y1} L ${x2 + endW} ${y2 + 0.1}`;
-    }
-  }
+  return bezier(sx, y1, ex, y2, startFromRight);
+}
 
-  if (y1 <= y2) {
-    if (x1 + startW <= x2) {
-      return `M ${x1 + startW} ${y1} L ${
-        midX - radius
-      } ${y1} A ${radius} ${radius} 0 0 1 ${midX} ${y1 + radius} L ${midX} ${
-        y2 - radius
-      } A ${radius} ${radius} 0 0 0 ${midX + radius} ${y2} L ${endX} ${y2}`;
-    } else if (x2 <= x1 + startW && x1 <= x2) {
-      return `M ${x1 + startW} ${y1} L ${
-        x2 + endW
-      } ${y1} A ${radius} ${radius} 0 0 1 ${x2 + endW + radius} ${
-        y1 + radius
-      } L ${x2 + endW + radius} ${y2 - radius} A ${radius} ${radius} 0 0 1 ${
-        x2 + endW
-      } ${y2} L ${x2 + endW} ${y2}`;
-    } else if (x2 + endW >= x1 && x2 + endW <= x1 + startW) {
-      return `M ${x1} ${y1} L ${
-        x2 - radius
-      } ${y1} A ${radius} ${radius} 0 0 0 ${x2 - radius - radius} ${
-        y1 + radius
-      } L ${x2 - radius - radius} ${y2 - radius} A ${radius} ${radius} 0 0 0 ${
-        x2 - radius
-      } ${y2} L ${x2} ${y2}`;
-    } else {
-      return `M ${x1} ${y1} L ${
-        midX + radius
-      } ${y1} A ${radius} ${radius} 0 0 0 ${midX} ${y1 + radius} L ${midX} ${
-        y2 - radius
-      } A ${radius} ${radius} 0 0 1 ${midX - radius} ${y2} L ${endX} ${y2}`;
-    }
-  } else {
-    if (x1 + startW <= x2) {
-      return `M ${x1 + startW} ${y1} L ${
-        midX - radius
-      } ${y1} A ${radius} ${radius} 0 0 0 ${midX} ${y1 - radius} L ${midX} ${
-        y2 + radius
-      } A ${radius} ${radius} 0 0 1 ${midX + radius} ${y2} L ${endX} ${y2}`;
-    } else if (x1 + startW >= x2 && x1 + startW <= x2 + endW) {
-      return `M ${x1} ${y1} L ${
-        x1 - radius - radius
-      } ${y1} A ${radius} ${radius} 0 0 1 ${x1 - radius - radius - radius} ${
-        y1 - radius
-      } L ${x1 - radius - radius - radius} ${
-        y2 + radius
-      } A ${radius} ${radius} 0 0 1 ${
-        x1 - radius - radius
-      } ${y2} L ${endX} ${y2}`;
-    } else if (x1 >= x2 && x1 <= x2 + endW) {
-      return `M ${x1 + startW} ${y1} L ${
-        x1 + startW + radius
-      } ${y1} A ${radius} ${radius} 0 0 0 ${x1 + startW + radius + radius} ${
-        y1 - radius
-      } L ${x1 + startW + radius + radius} ${
-        y2 + radius
-      } A ${radius} ${radius} 0 0 0 ${x1 + startW + radius} ${y2} L ${
-        x2 + endW
-      } ${y2}`;
-    } else {
-      return `M ${x1} ${y1} L ${
-        midX + radius
-      } ${y1} A ${radius} ${radius} 0 0 1 ${midX} ${y1 - radius} L ${midX} ${
-        y2 + radius
-      } A ${radius} ${radius} 0 0 0 ${midX - radius} ${y2} L ${endX} ${y2}`;
-    }
-  }
+// A horizontal S-curve: control points push out from each anchor along the
+// direction the card faces, so the curve leaves and meets the cards squarely.
+function bezier(sx, sy, ex, ey, startFromRight) {
+  const dx = Math.abs(ex - sx);
+  const dy = Math.abs(ey - sy);
+  // Enough tension to bow nicely when the cards are close or stacked, without
+  // ballooning across long spans.
+  const reach = Math.max(40, Math.min(dx * 0.5 + dy * 0.15, 180));
+  const dir = startFromRight ? 1 : -1;
+  // The far end faces back towards the start, whichever side it connects on.
+  const endDir = ex >= sx ? -1 : 1;
+  const c1x = sx + dir * reach;
+  const c2x = ex + endDir * reach;
+  return `M ${sx} ${sy} C ${c1x} ${sy}, ${c2x} ${ey}, ${ex} ${ey}`;
 }
 
 /**
