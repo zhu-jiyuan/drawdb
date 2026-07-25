@@ -2103,6 +2103,7 @@ export default function ControlPanel({
               {layout.readOnly && <Tag size="small">{t("read_only")}</Tag>}
               {!layout.readOnly && (
                 <Tag
+                  className="save-state-tag"
                   size="small"
                   type="light"
                   prefixIcon={

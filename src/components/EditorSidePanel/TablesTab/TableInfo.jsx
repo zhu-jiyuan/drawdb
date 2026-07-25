@@ -22,7 +22,7 @@ import IndexDetails from "./IndexDetails";
 import UniqueConstraintDetails from "./UniqueConstraintDetails";
 import { useTranslation } from "react-i18next";
 import { SortableList } from "../../SortableList/SortableList";
-import { nanoid } from "nanoid";
+import { appendField, focusFieldName } from "../../../utils/tableFields";
 
 export default function TableInfo({ data }) {
   const { tables, database } = useDiagram();
@@ -394,39 +394,14 @@ export default function TableInfo({ data }) {
             block
             disabled={layout.readOnly}
             onClick={() => {
-              const id = nanoid();
-              setUndoStack((prev) => [
-                ...prev,
-                {
-                  action: Action.EDIT,
-                  element: ObjectType.TABLE,
-                  component: "field_add",
-                  tid: data.id,
-                  fid: id,
-                  message: t("edit_table", {
-                    tableName: data.name,
-                    extra: "[add field]",
-                  }),
-                },
-              ]);
-              setRedoStack([]);
-              updateTable(data.id, {
-                fields: [
-                  ...data.fields,
-                  {
-                    id,
-                    name: "",
-                    type: "",
-                    default: "",
-                    check: "",
-                    primary: false,
-                    unique: false,
-                    notNull: false,
-                    increment: false,
-                    comment: "",
-                  },
-                ],
+              appendField({
+                table: data,
+                updateTable,
+                setUndoStack,
+                setRedoStack,
+                t,
               });
+              focusFieldName(data.id, data.fields.length);
             }}
           >
             {t("add_field")}

@@ -15,9 +15,10 @@ import { DragHandle } from "../../SortableList/DragHandle";
 import FieldDetails from "./FieldDetails";
 import { getCustomTypesForDb } from "../../../utils/customTypes";
 import { fieldUpdatesForTypeChange } from "../../../utils/fieldTypeChange";
+import { appendField, focusFieldName } from "../../../utils/tableFields";
 
 export default function TableField({ data, tid, index, inherited }) {
-  const { updateField } = useDiagram();
+  const { updateField, updateTable } = useDiagram();
   const { types } = useTypes();
   const { enums } = useEnums();
   const { layout } = useLayout();
@@ -66,6 +67,18 @@ export default function TableField({ data, tid, index, inherited }) {
               },
             ]);
             setRedoStack([]);
+          }}
+          onKeyDown={(e) => {
+            // Enter walks down the column, appending a row at the bottom, so a
+            // schema can be typed end to end without reaching for the mouse.
+            if (e.key !== "Enter" || layout.readOnly || !table) return;
+            e.preventDefault();
+            e.target.blur();
+            const isLast = index >= table.fields.length - 1;
+            if (isLast) {
+              appendField({ table, updateTable, setUndoStack, setRedoStack, t });
+            }
+            focusFieldName(tid, index + 1);
           }}
         />
       </div>

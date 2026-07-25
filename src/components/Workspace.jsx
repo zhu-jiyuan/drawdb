@@ -13,6 +13,7 @@ import ExtensionsContext, { Slot } from "../context/ExtensionsContext";
 import Canvas from "./EditorCanvas/Canvas";
 import { CanvasContextProvider } from "../context/CanvasContext";
 import SidePanel from "./EditorSidePanel/SidePanel";
+import MobileInspector from "./EditorSidePanel/MobileInspector";
 import { DB, State } from "../data/constants";
 import { db } from "../data/db";
 import {
@@ -541,6 +542,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           <CanvasContextProvider className="h-full w-full">
             <Canvas saveState={saveState} setSaveState={setSaveState} />
           </CanvasContextProvider>
+          <MobileInspector />
           <Slot name="canvas-overlay" />
           {layout.toolbar && (
             <div
