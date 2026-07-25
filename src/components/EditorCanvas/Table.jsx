@@ -1,3 +1,4 @@
+import "../../styles/card.css";
 import { useMemo, useState } from "react";
 import {
   Action,
@@ -539,7 +540,14 @@ export default function Table({
                     )}
                   />
                 ) : (
-                  tableData.name
+                  <>
+                    {tableData.name}
+                    {/* Optional display name, e.g. `users 用户`. Edited from the
+                        inspector; absent on most tables. */}
+                    {tableData.alias ? (
+                      <span className="table-alias">{tableData.alias}</span>
+                    ) : null}
+                  </>
                 )}
               </div>
               <div className="hidden group-hover:flex items-center shrink-0 pe-2">
@@ -747,6 +755,15 @@ export default function Table({
   function field(fieldData, index) {
     const fieldResolved = resolveType(database, fieldData.type);
     const showFieldComment = fieldData.comment && settings.showComments;
+    // One badge per field, or none at all — it now travels with the type on the
+    // right instead of holding a column open on the left.
+    const keyBadge = fieldData.primary
+      ? "PK"
+      : getFieldReference(fieldData)
+        ? "FK"
+        : fieldData.unique
+          ? "UQ"
+          : null;
     return (
       <div
         className="group w-full overflow-hidden"
@@ -781,166 +798,146 @@ export default function Table({
         }}
       >
         <div className="h-[40px] px-3 py-1 flex items-center gap-[6px]">
-          <div className="flex items-center gap-[6px] shrink-0">
-            <button
-              className="shrink-0 w-[10px] h-[10px] bg-[#6965dbcc] rounded-full"
-              onPointerDown={(e) => {
-                if (!e.isPrimary) return;
+          <button
+            className="shrink-0 w-[10px] h-[10px] bg-[#6965dbcc] rounded-full"
+            onPointerDown={(e) => {
+              if (!e.isPrimary) return;
 
-                handleGripField();
-                const fieldY =
-                  tableData.y +
-                  getFieldOffsetY(
-                    visibleFields,
-                    index,
-                    cardWidth,
-                    settings.showComments,
-                  ) +
-                  tableHeaderHeight +
-                  tableColorStripHeight +
-                  getCommentHeight(
-                    tableData.comment,
-                    cardWidth,
-                    settings.showComments,
-                  ) +
-                  14;
-                setLinkingLine((prev) => ({
-                  ...prev,
-                  startFieldId: fieldData.id,
-                  startTableId: tableData.id,
-                  startX: tableData.x + 15,
-                  startY: fieldY,
-                  endX: tableData.x + 15,
-                  endY: fieldY,
-                }));
-              }}
-            />
-            {/* PK / FK / UQ in a fixed column so keys line up down the card */}
-            <span
-              className={`key-badge ${
-                fieldData.primary
-                  ? "pk"
-                  : getFieldReference(fieldData)
-                    ? "fk"
-                    : fieldData.unique
-                      ? "uq"
-                      : ""
-              }`}
-              aria-hidden={
-                !fieldData.primary &&
-                !fieldData.unique &&
-                !getFieldReference(fieldData)
-              }
-            >
-              {fieldData.primary
-                ? "PK"
-                : getFieldReference(fieldData)
-                  ? "FK"
-                  : fieldData.unique
-                    ? "UQ"
-                    : ""}
-            </span>
-            <span
-              className="field-name whitespace-nowrap overflow-hidden text-ellipsis cursor-text"
-              title={fieldData.name}
-              onClick={(e) => {
-                if (layout.readOnly) return;
-                e.stopPropagation();
-                setEditingFieldId(fieldData.id);
-              }}
-            >
-              {editingFieldId === fieldData.id ? (
-                <input
-                  defaultValue={fieldData.name}
-                  className="w-full bg-transparent border border-blue-400 rounded px-1 outline-none"
-                  {...inlineInputProps(
-                    (value) => commitFieldName(fieldData, value),
-                    () => setEditingFieldId(null),
-                  )}
-                />
-              ) : (
-                fieldData.name
-              )}
-            </span>
-          </div>
-          {/* dotted leader ties the name to its right-aligned type */}
-          <div className="field-leader" />
-          <div
-            className="flex items-center gap-1 shrink-0"
+              handleGripField();
+              const fieldY =
+                tableData.y +
+                getFieldOffsetY(
+                  visibleFields,
+                  index,
+                  cardWidth,
+                  settings.showComments,
+                ) +
+                tableHeaderHeight +
+                tableColorStripHeight +
+                getCommentHeight(
+                  tableData.comment,
+                  cardWidth,
+                  settings.showComments,
+                ) +
+                14;
+              setLinkingLine((prev) => ({
+                ...prev,
+                startFieldId: fieldData.id,
+                startTableId: tableData.id,
+                startX: tableData.x + 15,
+                startY: fieldY,
+                endX: tableData.x + 15,
+                endY: fieldY,
+              }));
+            }}
+          />
+          <span
+            className="field-name cursor-text"
+            title={fieldData.name}
             onClick={(e) => {
-              // Click the type to change it; blank row space stays free for
-              // selecting and dragging the card.
-              if (layout.readOnly || editingTypeFieldId === fieldData.id) return;
+              if (layout.readOnly) return;
               e.stopPropagation();
-              setEditingTypeFieldId(fieldData.id);
+              setEditingFieldId(fieldData.id);
             }}
           >
-            {editingTypeFieldId === fieldData.id ? (
-              <div
-                className="w-[130px]"
-                onPointerDown={(e) => e.stopPropagation()}
-                onDoubleClick={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Select
-                  size="small"
-                  className="w-full"
-                  filter
-                  autoFocus
-                  defaultOpen
-                  defaultValue={fieldData.type}
-                  optionList={typeOptions.map((tp) => ({
-                    label: tp,
-                    value: tp,
-                  }))}
-                  onChange={(value) => commitFieldType(fieldData, value)}
-                  onBlur={() => setEditingTypeFieldId(null)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") setEditingTypeFieldId(null);
-                  }}
-                />
-              </div>
-            ) : (
-              <>
-                {settings.showDataTypes && (
-                  <div className="flex gap-1 items-center">
-                    {!fieldData.notNull && (
-                      <span
-                        className="text-[12px]"
-                        style={{ color: "var(--canvas-ink3)" }}
-                        title={t("nullable")}
-                      >
-                        ?
-                      </span>
-                    )}
-                    {/* Type as a chip: pale wash of its hue with deep ink, so
-                        the secondary information stays readable without
-                        competing with the field name. */}
-                    <span className="field-type whitespace-nowrap">
-                      {fieldData.type +
-                        ((fieldResolved.isSized || fieldResolved.hasPrecision) &&
-                        fieldData.size &&
-                        fieldData.size !== ""
-                          ? `(${fieldData.size})`
-                          : "")}
-                    </span>
-                  </div>
+            {editingFieldId === fieldData.id ? (
+              <input
+                defaultValue={fieldData.name}
+                className="w-full bg-transparent border border-blue-400 rounded px-1 outline-none"
+                {...inlineInputProps(
+                  (value) => commitFieldName(fieldData, value),
+                  () => setEditingFieldId(null),
                 )}
-                {hoveredField === index && !layout.readOnly && (
-                  <Button
-                    theme="borderless"
+              />
+            ) : (
+              fieldData.name
+            )}
+          </span>
+          {/* Badge + type ride together against the right edge:
+              `id            PK  BIGINT`. Only the type half is clickable, so
+              the badge stays a label rather than a hidden control. */}
+          <div className="field-right flex items-center gap-[6px]">
+            {keyBadge && (
+              <span className={`key-badge ${keyBadge.toLowerCase()}`}>
+                {keyBadge}
+              </span>
+            )}
+            <div
+              className="flex items-center gap-[6px] shrink-0"
+              onClick={(e) => {
+                // Click the type to change it; blank row space stays free for
+                // selecting and dragging the card.
+                if (layout.readOnly || editingTypeFieldId === fieldData.id) return;
+                e.stopPropagation();
+                setEditingTypeFieldId(fieldData.id);
+              }}
+            >
+              {editingTypeFieldId === fieldData.id ? (
+                <div
+                  className="w-[130px]"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onDoubleClick={(e) => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Select
                     size="small"
-                    type="danger"
-                    title={t("delete")}
-                    icon={<IconDeleteStroked />}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteField(fieldData, tableData.id);
+                    className="w-full"
+                    filter
+                    autoFocus
+                    defaultOpen
+                    defaultValue={fieldData.type}
+                    optionList={typeOptions.map((tp) => ({
+                      label: tp,
+                      value: tp,
+                    }))}
+                    onChange={(value) => commitFieldType(fieldData, value)}
+                    onBlur={() => setEditingTypeFieldId(null)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setEditingTypeFieldId(null);
                     }}
                   />
-                )}
-              </>
-            )}
+                </div>
+              ) : (
+                <>
+                  {settings.showDataTypes && (
+                    <div className="flex gap-[6px] items-center">
+                      {!fieldData.notNull && (
+                        <span
+                          className="text-[12px]"
+                          style={{ color: "var(--canvas-ink3)" }}
+                          title={t("nullable")}
+                        >
+                          ?
+                        </span>
+                      )}
+                      {/* Plain mono text, not a chip: it already reads as
+                          secondary next to the badge it sits beside. */}
+                      <span className="field-type whitespace-nowrap">
+                        {fieldData.type +
+                          ((fieldResolved.isSized || fieldResolved.hasPrecision) &&
+                          fieldData.size &&
+                          fieldData.size !== ""
+                            ? `(${fieldData.size})`
+                            : "")}
+                      </span>
+                    </div>
+                  )}
+                  {hoveredField === index && !layout.readOnly && (
+                    <Button
+                      theme="borderless"
+                      size="small"
+                      type="danger"
+                      title={t("delete")}
+                      icon={<IconDeleteStroked />}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteField(fieldData, tableData.id);
+                      }}
+                    />
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
         {showFieldComment && (

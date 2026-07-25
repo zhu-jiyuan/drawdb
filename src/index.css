@@ -407,6 +407,14 @@ body[theme-mode="dark"] foreignObject .font-mono {
   --accent-wash: #6965db14;
   --danger: #b32d2d;
   --danger-wash: #b32d2d14;
+  --insp-line: #dedee8;
+  --insp-line2: #e9e9f1;
+  --insp-soft: #f5f5f9;
+  --insp-field: #fbfbfd;
+  --insp-open: #e9e7fa;
+  --insp-open-line: #cdc9f2;
+  --insp-card: #faf9ff;
+  --insp-fk: #f5f3fe;
 }
 
 body[theme-mode="dark"] {
@@ -427,6 +435,14 @@ body[theme-mode="dark"] {
   --accent-wash: #9b98f01f;
   --danger: #f08a8a;
   --danger-wash: #f08a8a1f;
+  --insp-line: #3a3a45;
+  --insp-line2: #33333d;
+  --insp-soft: #2a2a33;
+  --insp-field: #1e1e25;
+  --insp-open: #322c56;
+  --insp-open-line: #4a4180;
+  --insp-card: #24222f;
+  --insp-fk: #262238;
 }
 
 /* identifiers, types and defaults: mono, never the handwriting face */
@@ -501,6 +517,61 @@ foreignObject .field-type {
 .table-title {
   font-size: var(--t-card);
   color: var(--canvas-ink);
+}
+
+
+/* Phones: the same panel becomes a bottom sheet, as in the mobile design —
+   a 352px rail on a 390px screen is not a rail, it is the whole screen. */
+@media (max-width: 700px) {
+  .inspector {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 62vh;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 -6px 24px rgba(20, 20, 40, 0.16);
+    animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* the grabber the design shows at the top of the sheet */
+  .inspector::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 46px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--insp-line);
+    z-index: 1;
+  }
+
+  .insp-scroll {
+    padding-top: 8px;
+  }
+
+  .ititle {
+    font-size: 22px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector {
+    animation: none;
+  }
 }
 
 /* ── Command palette ────────────────────────────────────────────────────────
@@ -746,124 +817,382 @@ foreignObject .field-type {
 }
 
 /* ── Selection inspector ────────────────────────────────────────────────────
-   The side panel used to be a browser: lists of every table, relationship,
-   area and note, with the object you were actually working on buried inside
-   one of them. It now shows the selection instead, so the thing in front of
-   you and the controls for it are in the same place. */
+   A panel on the right of the canvas, ported from the approved design
+   (scratchpad/oneinsp-mock.html) rather than approximated: sizes, colours and
+   spacing below are that file's values. */
 
 .inspector {
+  position: fixed;
+  right: 16px;
+  top: 16px;
+  bottom: 16px;
+  width: 352px;
+  z-index: 25;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--insp-line);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(20, 20, 40, 0.06),
+    0 6px 20px -6px rgba(20, 20, 40, 0.16);
 }
 
-.inspector-head {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px 10px;
-  border-bottom: 1px solid var(--canvas-hair);
+.insp-scroll {
+  overflow: auto;
+  padding: 0 0 18px;
 }
 
-.inspector-back {
-  flex: none;
+.ihead {
+  padding: 13px 20px 9px;
+}
+
+.ihead-top {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
+  justify-content: space-between;
+}
+
+.insp-close {
+  width: 24px;
+  height: 24px;
   border-radius: 7px;
-  color: var(--canvas-ink2);
-  transition: background-color 0.15s ease, color 0.15s ease;
+  color: var(--canvas-ink3);
+  font-size: 13px;
+  line-height: 1;
 }
 
-.inspector-back:hover {
-  background: var(--accent-wash);
+.insp-close:hover {
+  background: var(--insp-soft);
+  color: var(--canvas-ink);
+}
+
+.ieyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  color: var(--canvas-ink3);
+  text-transform: uppercase;
+}
+
+.ieyebrow .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+.ititle {
+  margin: 4px 0 0;
+  font-family: "Excalifont", "Segoe Print", "Bradley Hand", "KaiTi", cursive;
+  font-size: 25px;
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  color: var(--canvas-ink);
+}
+
+.isub {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--canvas-ink3);
+}
+
+.sec {
+  padding: 11px 20px 3px;
+  border-top: 1px solid var(--insp-line2);
+}
+
+.sec.last {
+  padding-top: 13px;
+  padding-bottom: 8px;
+}
+
+.sech {
+  margin: 0 0 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: var(--canvas-ink3);
+  text-transform: uppercase;
+}
+
+.sechrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sechrow .sech {
+  margin: 0;
+}
+
+.count {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 1px 7px;
+  border: 1px solid var(--insp-line2);
+  border-radius: 20px;
+  background: var(--insp-soft);
+  font-size: 10.5px;
+  letter-spacing: 0;
+  color: var(--canvas-ink3);
+}
+
+.mini {
+  padding: 4px 8px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--accent);
 }
 
-.inspector-back:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+.mini:hover {
+  background: var(--accent-wash);
 }
 
-.inspector-title {
+.mini:disabled {
+  opacity: 0.45;
+}
+
+.f {
+  margin-bottom: 7px;
+}
+
+.f label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  color: var(--canvas-ink3);
+}
+
+.f input,
+.f textarea,
+.sel {
+  display: block;
+  width: 100%;
+  padding: 5px 9px;
+  border: 1px solid var(--insp-line);
+  border-radius: 8px;
+  background: var(--insp-field);
+  font-size: 13px;
+  line-height: 1.42;
+  color: var(--canvas-ink);
+  resize: none;
+}
+
+.f input:focus,
+.f textarea:focus,
+.sel:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.f.inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.f.inline label {
+  margin: 0;
+}
+
+select.sel {
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 12.5px;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--canvas-ink3) 50%),
+    linear-gradient(135deg, var(--canvas-ink3) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 11px, calc(100% - 9px) 11px;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.sel-static {
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 12.5px;
+  color: var(--canvas-ink2);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.swatches {
+  display: flex;
+  gap: 7px;
+}
+
+.sw {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.sw.on {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 3px var(--accent);
+}
+
+.flist {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.frow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.frow:hover {
+  background: var(--insp-soft);
+}
+
+.fchev {
+  width: 9px;
+  font-size: 9px;
+  color: var(--canvas-ink3);
+}
+
+.fn {
+  flex: 1;
   min-width: 0;
-}
-
-.inspector-name {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--canvas-ink);
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 19px;
+  font-size: 13px;
+  color: var(--canvas-ink2);
 }
 
-.inspector-kind {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--canvas-ink3);
-}
-
-.inspector-body {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  padding: 10px;
-}
-
-/* ── Inspector as a bottom sheet (phones) ───────────────────────────────────
-   Phones collapse the side panel, so the inspector needs its own home there.
-   A sheet over the lower half keeps the selected card in view while editing. */
-.mobile-inspector {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 900;
-  display: flex;
-  flex-direction: column;
-  max-height: 58vh;
-  background: var(--surface);
-  border-top: 1px solid var(--canvas-hair);
-  border-radius: 14px 14px 0 0;
-  box-shadow: 0 -6px 24px #17172026;
-  animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mobile-inspector-grip {
-  flex: none;
+.fr {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  min-height: 34px;
+  gap: 7px;
+  flex-shrink: 0;
+}
+
+.ft {
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 11px;
   color: var(--canvas-ink3);
 }
 
-.mobile-inspector .inspector {
-  min-height: 0;
+.frow.on {
+  background: var(--insp-open);
+  border-color: var(--insp-open-line);
 }
 
-.mobile-inspector .inspector-body {
-  padding-bottom: 24px;
+.frow.on .fn {
+  color: var(--accent);
+  font-weight: 700;
 }
 
-@keyframes sheet-up {
-  from {
-    transform: translateY(12px);
-    opacity: 0;
-  }
+.frow.on .fchev {
+  color: var(--accent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .mobile-inspector {
-    animation: none;
-  }
+.fcard {
+  margin: 3px 0;
+  padding: 4px;
+  border: 1px solid var(--insp-open-line);
+  border-radius: 11px;
+  background: var(--insp-card);
+  box-shadow: 0 1px 3px rgba(80, 74, 180, 0.07);
 }
+
+.fcard .frow.on {
+  border-color: transparent;
+}
+
+.fbody {
+  padding: 8px 10px 1px;
+}
+
+.flags {
+  display: flex;
+  gap: 6px;
+}
+
+.flag {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid var(--insp-line);
+  border-radius: 8px;
+  background: var(--insp-field);
+  font-size: 12px;
+  color: var(--canvas-ink2);
+}
+
+.flag.on {
+  border-color: #63b98a;
+  background: #e7f7ee;
+  color: #1d6b45;
+  font-weight: 600;
+}
+
+.flag:disabled {
+  opacity: 0.5;
+}
+
+.fk-block {
+  margin: 2px -10px 0;
+  padding: 9px 10px 1px;
+  border-top: 1px dashed var(--insp-open-line);
+  border-radius: 0 0 8px 8px;
+  background: var(--insp-fk);
+}
+
+.fk-head {
+  margin-bottom: 8px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.tag {
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  line-height: 14px;
+}
+
+.tag.pk {
+  background: var(--pk-bg);
+  color: var(--pk-ink);
+}
+
+.tag.fk {
+  background: var(--fk-bg);
+  color: var(--fk-ink);
+}
+
+.tag.uq {
+  background: var(--uq-bg);
+  color: var(--uq-ink);
+}
+
+
 
 /* Phones: the header has to fit the title, the palette trigger and Share in
    390px. "Last saved 7/25/2026, 7:23:20 PM" is the least load-bearing of the

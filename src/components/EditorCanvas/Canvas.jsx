@@ -5,6 +5,9 @@ import {
   Cardinality,
   Constraint,
   darkBgTheme,
+  DB,
+  defaultBlue,
+  defaultNoteTheme,
   ObjectType,
   gridSize,
   gridCircleRadius,
@@ -15,6 +18,11 @@ import Table from "./Table";
 import Area from "./Area";
 import Relationship from "./Relationship";
 import Note from "./Note";
+import ToolSwitch from "./ToolSwitch";
+import ToolContextProvider, {
+  Tool,
+  isPlacementTool,
+} from "../../context/ToolContext";
 import {
   useCanvas,
   useSettings,
@@ -26,6 +34,7 @@ import {
   useNotes,
   useLayout,
   useSaveState,
+  useTool,
 } from "../../hooks";
 import { useTranslation } from "react-i18next";
 import { useEventListener } from "usehooks-ts";
@@ -34,7 +43,20 @@ import { getRectFromEndpoints, isInsideRect } from "../../utils/rect";
 import { State, noteWidth } from "../../data/constants";
 import { nanoid } from "nanoid";
 
-export default function Canvas() {
+/**
+ * The tool state lives here rather than up in Editor.jsx because the canvas and
+ * the tool island are its only consumers, and the island portals itself out to
+ * the body anyway — so being rendered from inside the canvas costs it nothing.
+ */
+export default function Canvas(props) {
+  return (
+    <ToolContextProvider>
+      <CanvasBody {...props} />
+    </ToolContextProvider>
+  );
+}
+
+function CanvasBody() {
   const { t } = useTranslation();
 
   const canvasRef = useRef(null);
@@ -44,11 +66,18 @@ export default function Canvas() {
     pointer,
   } = canvasContextValue;
 
-  const { tables, updateTable, relationships, addRelationship, database } =
-    useDiagram();
+  const {
+    tables,
+    updateTable,
+    relationships,
+    addRelationship,
+    addTable,
+    database,
+  } = useDiagram();
   const { setSaveState } = useSaveState();
-  const { areas, updateArea } = useAreas();
-  const { notes, updateNote } = useNotes();
+  const { areas, updateArea, addArea } = useAreas();
+  const { notes, updateNote, addNote } = useNotes();
+  const { tool, setTool } = useTool();
   const { layout } = useLayout();
   const { settings } = useSettings();
   const { setUndoStack, setRedoStack } = useUndoRedo();
@@ -77,6 +106,9 @@ export default function Canvas() {
     endY: 0,
   });
   const rightClickPanned = useRef(false);
+  // Where a placement-tool press started, so pointer-up can tell a click (place
+  // the object) from a drag (the user changed their mind and swiped away).
+  const placementStart = useRef(null);
   const [hoveredTable, setHoveredTable] = useState({
     tableId: null,
     fieldId: null,
@@ -278,6 +310,103 @@ export default function Canvas() {
       };
     }
     return { x, y };
+  };
+
+  /**
+   * Drops the armed tool's object with its top-left corner on `point` (diagram
+   * space) and selects it, so it can be named straight away.
+   *
+   * Each context builds its own default object when called with no data, but
+   * those defaults are all "centre of the current view" — the whole point of a
+   * placement tool is that the user picked the spot, so the objects are built
+   * here instead, matching the shape each context splices in.
+   */
+  const placeToolAt = (point) => {
+    const { x, y } = coordinatesAfterSnappingToGrid(point);
+
+    if (tool === Tool.TABLE) {
+      let n = tables.length + 1;
+      const taken = new Set(tables.map((tb) => tb.name));
+      while (taken.has(`table_${n}`)) n += 1;
+
+      const table = {
+        id: nanoid(),
+        name: `table_${n}`,
+        x,
+        y,
+        locked: false,
+        fields: [
+          {
+            name: "id",
+            type: database === DB.GENERIC ? "INT" : "INTEGER",
+            default: "",
+            check: "",
+            primary: true,
+            unique: false,
+            unsigned: true,
+            notNull: true,
+            increment: true,
+            comment: "",
+            id: nanoid(),
+          },
+        ],
+        comment: "",
+        indices: [],
+        uniqueConstraints: [],
+        color: defaultBlue,
+        collapsed: false,
+      };
+      addTable({ table, index: tables.length });
+      setSelectedElement((prev) => ({
+        ...prev,
+        element: ObjectType.TABLE,
+        id: table.id,
+        open: false,
+      }));
+      return;
+    }
+
+    if (tool === Tool.AREA) {
+      const id = areas.length;
+      addArea({
+        id,
+        name: `area_${id}`,
+        x,
+        y,
+        width: 200,
+        height: 200,
+        color: defaultBlue,
+        locked: false,
+      });
+      setSelectedElement((prev) => ({
+        ...prev,
+        element: ObjectType.AREA,
+        id,
+        open: false,
+      }));
+      return;
+    }
+
+    if (tool === Tool.NOTE) {
+      const id = notes.length;
+      addNote({
+        id,
+        x,
+        y,
+        title: `note_${id}`,
+        content: "",
+        locked: false,
+        color: defaultNoteTheme,
+        height: 88,
+        width: noteWidth,
+      });
+      setSelectedElement((prev) => ({
+        ...prev,
+        element: ObjectType.NOTE,
+        id,
+        open: false,
+      }));
+    }
   };
 
   /**
@@ -484,6 +613,19 @@ export default function Canvas() {
     const isMouseRightButton = e.button === 2;
     const isTouch = e.pointerType === "touch" || e.pointerType === "pen";
 
+    // A placement tool takes the press over: no pan, no rubber-band select.
+    // elementPointerDown is set by the children a moment earlier in the same
+    // dispatch, so a null here really does mean empty canvas.
+    if (
+      isPlacementTool(tool) &&
+      isMouseLeftButton &&
+      elementPointerDown === null &&
+      !layout.readOnly
+    ) {
+      placementStart.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
     // Touch has no middle/right button, so a one-finger press on empty canvas
     // pans (Excalidraw behavior); pressing on a table still moves it.
     if (isTouch && isMouseLeftButton && elementPointerDown === null) {
@@ -559,6 +701,22 @@ export default function Canvas() {
 
     if (!e.isPrimary) return;
 
+    const placement = placementStart.current;
+    placementStart.current = null;
+    if (placement && isPlacementTool(tool)) {
+      const isClick =
+        Math.abs(e.clientX - placement.x) <= 4 &&
+        Math.abs(e.clientY - placement.y) <= 4;
+      if (isClick) {
+        placeToolAt(pointer.spaces.diagram);
+        // One object per arming: staying armed would have every stray click
+        // litter the canvas with tables.
+        setTool(Tool.SELECT);
+      }
+      pointer.setStyle("default");
+      return;
+    }
+
     if (didDrag()) {
       setUndoStack((prev) => [
         ...prev,
@@ -603,7 +761,9 @@ export default function Canvas() {
     setPanning((old) => ({ ...old, isPanning: false }));
     pointer.setStyle("default");
 
-    if (linking) handleLinking();
+    if (linking && handleLinking() && tool === Tool.RELATIONSHIP) {
+      setTool(Tool.SELECT);
+    }
     setLinking(false);
 
     if (areaResize.id !== -1 && didResize(areaResize.id)) {
@@ -663,9 +823,10 @@ export default function Canvas() {
     return Cardinality.ONE_TO_ONE;
   };
 
+  /** @returns {boolean} whether a relationship was actually created. */
   const handleLinking = () => {
-    if (hoveredTable.tableId === null) return;
-    if (hoveredTable.fieldId === null) return;
+    if (hoveredTable.tableId === null) return false;
+    if (hoveredTable.fieldId === null) return false;
 
     const { fields: startTableFields, name: startTableName } = tables.find(
       (t) => t.id === linkingLine.startTableId,
@@ -680,13 +841,13 @@ export default function Canvas() {
 
     if (!areFieldsCompatible(database, startField.type, endField.type)) {
       Toast.info(t("cannot_connect"));
-      return;
+      return false;
     }
     if (
       linkingLine.startTableId === hoveredTable.tableId &&
       linkingLine.startFieldId === hoveredTable.fieldId
     )
-      return;
+      return false;
 
     const cardinality = getCardinality(startField, endField);
 
@@ -711,6 +872,7 @@ export default function Canvas() {
     delete newRelationship.endX;
     delete newRelationship.endY;
     addRelationship(newRelationship);
+    return true;
   };
 
   useEventListener(
@@ -759,13 +921,18 @@ export default function Canvas() {
 
   return (
     <div
-      className={`grow h-full touch-none ${settings.sketchMode ? "sketch-mode" : ""}`}
+      className={`grow h-full touch-none ${settings.sketchMode ? "sketch-mode" : ""} ${
+        tool === Tool.RELATIONSHIP ? "tool-linking" : ""
+      }`}
       id="canvas"
     >
       <div
         className="w-full h-full"
         style={{
-          cursor: pointer.style,
+          // An armed tool holds the crosshair for as long as it is armed —
+          // pointer.style is per-gesture and drops back to default on every
+          // pointer-up, which would leave the mode invisible between clicks.
+          cursor: tool === Tool.SELECT ? pointer.style : "crosshair",
           backgroundColor: settings.mode === "dark" ? darkBgTheme : "white",
         }}
       >
@@ -903,6 +1070,7 @@ export default function Canvas() {
           )}
         </svg>
       </div>
+      <ToolSwitch />
       {settings.showDebugCoordinates && (
         <div className="fixed flex flex-col flex-wrap gap-6 bg-[rgba(var(--semi-grey-1),var(--tw-bg-opacity))]/40 border border-color bottom-4 right-4 p-4 rounded-xl backdrop-blur-xs pointer-events-none select-none">
           <table className="table-auto grow">

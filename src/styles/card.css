@@ -1,0 +1,46 @@
+/* ---- Canvas table card ------------------------------------------------------
+   Owns the approved card layout: a table name followed by its optional alias,
+   and field rows that read `name . . . . . PK  BIGINT` — the name hard left, the
+   key badge and the type travelling together on the right. Rules here override
+   the older card styling in index.css (which another surface still shares), so
+   each one is written at equal-or-higher specificity than its counterpart
+   there. Widths for all of this are budgeted in utils/tableWidth.js; if a
+   padding or gap below changes, change the constant there too or names start
+   getting clipped. */
+
+/* The alias is a gloss on the table name, not a second title: one small step
+   down in size and two steps down in contrast, so `users 用户` reads as one
+   thing. It keeps whichever face the card is drawn in (handwriting in sketch
+   mode) — utils/tableWidth.js measures it against that same family. */
+.table-title .table-alias {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--canvas-ink3);
+  margin-inline-start: 6px;
+  white-space: nowrap;
+}
+
+/* Field names are the payload of the card and are never shortened: the card
+   grows to fit them (getRequiredTableWidth). No ellipsis, no shrinking — if the
+   maths were ever wrong we want to see the overflow, not a silent `defau…`. */
+foreignObject .field-name {
+  flex: none;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* Key badge + type ride together against the right edge. */
+foreignObject .field-right {
+  margin-inline-start: auto;
+  flex: none;
+}
+
+/* The type is plain text at the end of that cluster — the pale chip the card
+   used to draw competed with the badge sitting right next to it. */
+foreignObject .field-type {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  color: var(--canvas-ink2);
+}

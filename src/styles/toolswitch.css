@@ -1,0 +1,102 @@
+/* The tool island, top-centre of the canvas. Sizes and colours come from the
+   approved mockup; they are expressed through the shared island tokens so the
+   switch follows the dark theme along with everything else. */
+
+.tool-switch {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface, #fff);
+  border: 1px solid var(--insp-line, #dedee8);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(20, 20, 40, 0.06),
+    0 6px 20px -6px rgba(20, 20, 40, 0.16);
+  max-width: calc(100vw - 20px);
+}
+
+/* min-width, not width: the mockup is sized for the Chinese labels, and
+   "Relationship" would otherwise spill out of a fixed 74px column. */
+.tsw-tool {
+  position: relative;
+  min-width: 74px;
+  padding: 7px 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--canvas-ink2, #3c3c4c);
+}
+
+.tsw-tool:hover {
+  background: var(--insp-soft, #f5f5f9);
+}
+
+.tsw-tool.is-active {
+  background: var(--insp-open, #efeefb);
+  color: #4b45b8;
+  font-weight: 600;
+}
+
+body[theme-mode="dark"] .tsw-tool.is-active {
+  color: var(--accent);
+}
+
+.tsw-tool svg {
+  width: 18px;
+  height: 18px;
+}
+
+.tsw-label {
+  white-space: nowrap;
+}
+
+.tsw-key {
+  position: absolute;
+  top: 4px;
+  right: 7px;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--canvas-ink3, #6f6f88);
+}
+
+.tsw-tool.is-active .tsw-key {
+  color: inherit;
+  opacity: 0.7;
+}
+
+/* While the relationship tool is armed there is nothing to click on empty
+   canvas, so point at what there *is*: the field grips a link starts from.
+   Matched on the grip's colour utility class because the grip has no class of
+   its own — if that markup changes the highlight quietly stops, which is the
+   right way for a hint to fail. */
+.tool-linking #diagram button[class*="6965dbcc"] {
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 0 4px var(--accent-wash);
+}
+
+/* Phones: the doc island owns the full width of the top edge, so the switch
+   tucks in underneath it and tightens up to fit a 360px screen. */
+@media (max-width: 700px) {
+  .tool-switch {
+    top: 64px;
+    gap: 1px;
+    padding: 5px;
+  }
+
+  .tsw-tool {
+    min-width: 58px;
+    padding: 6px 4px 5px;
+    font-size: 11px;
+  }
+}

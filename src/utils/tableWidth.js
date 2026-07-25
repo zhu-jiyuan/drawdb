@@ -6,18 +6,21 @@
 import { resolveType } from "./customTypes";
 
 // Measured against the real row markup in Table.jsx:
-//   <div class="h-[36px] px-2 ... flex justify-between items-center gap-1">
-//     <div class="flex items-center gap-2">[grip 10px] [name]</div>
-//     <div class="flex items-center gap-1 shrink-0">[key][?][type][delete]</div>
+//   <div class="h-[40px] px-3 py-1 flex items-center gap-[6px]">
+//     [grip 10px] [name]
+//     <div class="field-right flex items-center gap-[6px]">[key][?][type][delete]</div>
+//   (.field-right carries margin-inline-start:auto — see styles/card.css)
+// The name sits hard left; the key badge and the type ride together on the
+// right, with no leader between them.
 const ROW_PADDING = 24; // px-3 on both sides
-const GRIP = 10 + 6; // grip dot + gap
-const CLUSTER_GAP = 4; // gap-1 between the name and type clusters
-const KEY_BADGE = 23 + 6; // fixed PK/FK/UQ column + its gap
-const NULL_GLYPH = 12; // "?" nullable marker + its gap
-const CHIP_PADDING = 16; // the type chip's px-[6px] on both sides
-const LEADER_MIN = 24; // minimum visible run of leader dots
+const GRIP = 10; // the grip dot / drag handle
+const ROW_GAP = 6; // gap-[6px] between every item in a row
+const KEY_BADGE = 23; // PK/FK/UQ badge, now part of the right cluster
+const NULL_GLYPH = 8; // "?" nullable marker
+const NAME_GAP_MIN = 24; // blank run kept between the name and the right cluster
 const DELETE_BTN = 34; // revealed on hover — budget it so nothing shifts/overlaps
 const HEADER_ACTIONS = 104; // lock / collapse / more buttons revealed on hover
+const ALIAS_GAP = 6; // gap between the table name and its alias
 const SAFETY = 6; // hinting/subpixel slack
 const MAX_WIDTH = 640;
 
@@ -25,9 +28,13 @@ const MAX_WIDTH = 640;
 // via CSS (see index.css). Keep these in sync with Table.jsx.
 const FONT_SIZE = 15; // field names (mono)
 const TITLE_SIZE = 20; // table name (handwriting)
-const TYPE_SIZE = 13.5; // type chip (mono)
+const ALIAS_SIZE = 13; // table alias next to the name
+const TYPE_SIZE = 13.5; // type label (mono)
+// Byte-identical to the stack index.css paints .field-name / .field-type with:
+// measuring against a different fallback than the one that renders is how a
+// name ends up wider than its card.
 const MONO_STACK =
-  'ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace';
+  'ui-monospace, "JetBrains Mono", "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, "Noto Sans Mono CJK SC", monospace';
 const SKETCH_STACK =
   '"Excalifont", "Segoe Print", "Bradley Hand", "KaiTi", "STKaiti", "Kaiti SC", cursive';
 
@@ -73,30 +80,37 @@ export function getRequiredTableWidth(table, database, settings) {
   const family = canvasFontFamily(settings?.sketchMode);
   const showTypes = settings?.showDataTypes !== false;
 
-  // Header: bold title + room for the hover action buttons.
+  // Header: bold title, its optional alias, and room for the hover buttons.
   let widest =
     ROW_PADDING +
     measure(table.name, "bold", family, TITLE_SIZE) +
+    (table.alias
+      ? ALIAS_GAP + measure(table.alias, "normal", family, ALIAS_SIZE)
+      : 0) +
     HEADER_ACTIONS;
 
   for (const field of table.fields ?? []) {
-    let right = DELETE_BTN;
+    // Right cluster, laid out right-to-left: [badge] [?] [type] [delete].
+    // The badge is always budgeted even though a field without a key does not
+    // render one: whether a field is a foreign key lives in `relationships`,
+    // which this function deliberately does not take — Table.jsx, the
+    // relationship geometry and auto-layout all call it and must agree on the
+    // width to the pixel. Over-reserving 29px on a keyless row is harmless;
+    // guessing low would clip an FK row's type.
+    let right = KEY_BADGE + ROW_GAP + DELETE_BTN;
     if (showTypes) {
       right +=
         measure(typeLabel(database, field), "normal", MONO_STACK, TYPE_SIZE) +
-        CHIP_PADDING;
-      if (!field.notNull) right += NULL_GLYPH;
+        ROW_GAP;
+      if (!field.notNull) right += NULL_GLYPH + ROW_GAP;
     }
     // Identifiers render in the mono stack now, so measure them that way.
-    const row =
+    const left =
       ROW_PADDING +
       GRIP +
-      KEY_BADGE +
-      measure(field.name, "normal", MONO_STACK, FONT_SIZE) +
-      LEADER_MIN +
-      CLUSTER_GAP +
-      right +
-      SAFETY;
+      ROW_GAP +
+      measure(field.name, "normal", MONO_STACK, FONT_SIZE);
+    const row = left + NAME_GAP_MIN + right + SAFETY;
     if (row > widest) widest = row;
   }
 

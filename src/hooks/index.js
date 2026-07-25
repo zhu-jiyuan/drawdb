@@ -6,6 +6,7 @@ export { default as useNotes } from "./useNotes";
 export { default as useSaveState } from "./useSaveState";
 export { default as useSelect } from "./useSelect";
 export { default as useSettings } from "./useSettings";
+export { default as useTool } from "./useTool";
 export { default as useDiagram } from "./useDiagram";
 export { default as useTransform } from "./useTransform";
 export { default as useTypes } from "./useTypes";

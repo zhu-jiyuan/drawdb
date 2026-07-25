@@ -2,84 +2,29 @@ import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { layoutTables } from "../../../shared/tableLayout";
 import { getRequiredTableWidth } from "../../utils/tableWidth";
-import { Slot, useExtensions } from "../../context/ExtensionsContext";
-import { createPortal } from "react-dom";
-import {
-  IconCaretdown,
-  IconSaveStroked,
-  IconSearch,
-  IconUndo,
-  IconRedo,
-  IconEdit,
-  IconShareStroked,
-} from "@douyinfe/semi-icons";
-import { Link, useMatch, useParams } from "react-router-dom";
-import icon from "../../assets/icon_dark_64.png";
-import {
-  Button,
-  Divider,
-  Dropdown,
-  InputNumber,
-  Tooltip,
-  Spin,
-  Tag,
-  Toast,
-  Typography,
-} from "@douyinfe/semi-ui";
+import { useExtensions } from "../../context/ExtensionsContext";
+import { useMatch, useParams } from "react-router-dom";
+import { Toast, Typography } from "@douyinfe/semi-ui";
 import { toPng, toJpeg, toSvg } from "html-to-image";
-import {
-  jsonToMySQL,
-  jsonToPostgreSQL,
-  jsonToSQLite,
-  jsonToMariaDB,
-  jsonToSQLServer,
-  jsonToOracleSQL,
-} from "../../utils/exportSQL/generic";
-import {
-  ObjectType,
-  Action,
-  Tab,
-  State,
-  MODAL,
-  SIDESHEET,
-  DB,
-  IMPORT_FROM,
-  noteWidth,
-  pngExportPixelRatio,
-} from "../../data/constants";
+import { ObjectType, Action, Tab, State, MODAL, SIDESHEET, DB, IMPORT_FROM, noteWidth, pngExportPixelRatio } from "../../data/constants";
 import jsPDF from "jspdf";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Validator } from "jsonschema";
 import { areaSchema, noteSchema, tableSchema } from "../../data/schemas";
 import { db } from "../../data/db";
-import {
-  useLayout,
-  useSettings,
-  useTransform,
-  useDiagram,
-  useUndoRedo,
-  useSelect,
-  useSaveState,
-  useTypes,
-  useNotes,
-  useAreas,
-  useEnums,
-  useFullscreen,
-  useNavigateWithParams,
-} from "../../hooks";
+import { useLayout, useSettings, useTransform, useDiagram, useUndoRedo, useSelect, useSaveState, useTypes, useNotes, useAreas, useEnums, useFullscreen, useNavigateWithParams } from "../../hooks";
 import { enterFullscreen, exitFullscreen } from "../../utils/fullscreen";
 import { dataURItoBlob } from "../../utils/utils";
-import { IconAddArea, IconAddNote, IconAddTable } from "../../icons";
-import LayoutDropdown from "./LayoutDropdown";
+import DocIsland from "../islands/DocIsland";
+import ZoomIsland from "../islands/ZoomIsland";
 import CommandPalette from "../CommandPalette";
-import { flattenMenu, IS_APPLE } from "../../utils/commandRegistry";
+import { flattenMenu } from "../../utils/commandRegistry";
 import Sidesheet from "./SideSheet/Sidesheet";
 import Modal from "./Modal/Modal";
 import { useTranslation } from "react-i18next";
 import { exportSQL } from "../../utils/exportSQL";
 import { databases } from "../../data/databases";
 import { jsonToMermaid } from "../../utils/exportAs/mermaid";
-import { isRtl } from "../../i18n/utils/rtl";
 import { jsonToDocumentation } from "../../utils/exportAs/documentation";
 import { IdContext } from "../Workspace";
 import { socials } from "../../data/socials";
@@ -92,6 +37,15 @@ import { DateTime } from "luxon";
 import ConfigureCustomTypes from "./ConfigureCustomTypes";
 import { useDiagramList } from "./Modal/Open/hooks/useDiagramList";
 import { mergeDiagrams, sortDiagrams } from "./Modal/Open/diagram";
+
+import {
+  jsonToMySQL,
+  jsonToPostgreSQL,
+  jsonToSQLite,
+  jsonToMariaDB,
+  jsonToSQLServer,
+  jsonToOracleSQL,
+} from "../../utils/exportSQL/generic";
 
 // Dialects offered when the diagram is database-agnostic. Import and export each
 // spelled all six out in full, so adding one meant two edits across ~190 lines
@@ -109,14 +63,12 @@ export default function ControlPanel({
   title,
   setTitle,
   lastSaved,
-  toolbarContainer,
 }) {
   const { id: diagramId } = useParams();
 
   const [modal, setModal] = useState(MODAL.NONE);
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [showEditName, setShowEditName] = useState(false);
   const [importDb, setImportDb] = useState("");
   const [exportData, setExportData] = useState({
     data: "",
@@ -172,7 +124,7 @@ export default function ControlPanel({
   const { selectedElement, setSelectedElement } = useSelect();
   const { transform, setTransform } = useTransform();
   const { t, i18n } = useTranslation();
-  const { version, gistId, setGistId } = useContext(IdContext);
+  const { gistId, setGistId } = useContext(IdContext);
   const isTemplate = useMatch("/editor/templates/:id");
   const navigate = useNavigateWithParams();
   const extensions = useExtensions();
@@ -1421,6 +1373,14 @@ export default function ControlPanel({
         function: viewFieldSummary,
         shortcut: "Ctrl+Shift+F",
       },
+      auto_arrange: {
+        function: autoArrange,
+        keywords: "layout tidy organise arrange",
+      },
+      show_versions: {
+        function: () => setSidesheet(SIDESHEET.VERSIONS),
+        keywords: "history revisions timeline",
+      },
       fit_window: {
         function: fitWindow,
         shortcut: "Ctrl+Alt+W",
@@ -1668,31 +1628,25 @@ export default function ControlPanel({
     <>
       <div>
         {layout.header && (
-          <div
-            className="flex justify-between items-center border-b border-color pb-2"
-            style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
-          >
-            {header()}
-            <div className="flex items-center gap-2 me-7">
-              <Slot name="header-actions-start" />
-              {!isTemplate && (
-                <Button
-                  type="primary"
-                  className="!text-base !pe-6 !ps-5 !py-[18px] !rounded-md"
-                  size="default"
-                  icon={<IconShareStroked />}
-                  onClick={() => setModal(MODAL.SHARE)}
-                >
-                  {t("share")}
-                </Button>
-              )}
-              <Slot name="header-actions-end" />
-            </div>
-          </div>
+          <DocIsland
+            title={title}
+            state={getState()}
+            saving={saveState === State.SAVING || saveState === State.LOADING}
+            onRename={() => !layout.readOnly && setModal(MODAL.RENAME)}
+            onMenu={() => setPaletteOpen(true)}
+            onShare={() => setModal(MODAL.SHARE)}
+            showShare={!isTemplate}
+          />
         )}
-        {layout.toolbar &&
-          toolbarContainer &&
-          createPortal(toolbar(), toolbarContainer)}
+        {layout.toolbar && (
+          <ZoomIsland
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={undoStack.length > 0 && !layout.readOnly}
+            canRedo={redoStack.length > 0 && !layout.readOnly}
+            onResetZoom={fitWindow}
+          />
+        )}
       </div>
       <CommandPalette
         open={paletteOpen}
@@ -1723,165 +1677,6 @@ export default function ControlPanel({
     </>
   );
 
-  function toolbar() {
-    return (
-      <div
-        className="py-1.5 px-3 flex items-center gap-1 rounded-xl select-none overflow-hidden toolbar-theme shadow-lg"
-        style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
-      >
-        <div className="flex justify-start items-center">
-          <LayoutDropdown />
-          <Divider layout="vertical" margin="8px" />
-          <Dropdown
-            style={{ width: "240px" }}
-            position={isRtl(i18n.language) ? "bottomRight" : "bottomLeft"}
-            render={
-              <Dropdown.Menu
-                style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
-              >
-                <Dropdown.Item
-                  onClick={fitWindow}
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <div>{t("fit_window_reset")}</div>
-                  <div className="text-gray-400">Ctrl+Alt+W</div>
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                {[0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0].map((e, i) => (
-                  <Dropdown.Item
-                    key={i}
-                    onClick={() => {
-                      setTransform((prev) => ({ ...prev, zoom: e }));
-                    }}
-                  >
-                    {Math.floor(e * 100)}%
-                  </Dropdown.Item>
-                ))}
-                <Dropdown.Divider />
-                <Dropdown.Item>
-                  <InputNumber
-                    field="zoom"
-                    label={t("zoom")}
-                    placeholder={t("zoom")}
-                    suffix={<div className="p-1">%</div>}
-                    onChange={(v) =>
-                      setTransform((prev) => ({
-                        ...prev,
-                        zoom: parseFloat(v) * 0.01,
-                      }))
-                    }
-                  />
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            }
-            trigger="click"
-          >
-            <div className="py-1 px-2 hover-2 rounded-sm flex items-center justify-center">
-              <div className="w-[40px]">
-                {Math.floor(transform.zoom * 100)}%
-              </div>
-              <div>
-                <IconCaretdown />
-              </div>
-            </div>
-          </Dropdown>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("undo")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              disabled={undoStack.length === 0 || layout.readOnly}
-              onClick={undo}
-            >
-              <IconUndo size="large" />
-            </button>
-          </Tooltip>
-          <Tooltip content={t("redo")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              disabled={redoStack.length === 0 || layout.readOnly}
-              onClick={redo}
-            >
-              <IconRedo size="large" />
-            </button>
-          </Tooltip>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("add_table")} position="bottom">
-            <button
-              className="flex items-center py-1 px-2 hover-2 rounded-sm disabled:opacity-50"
-              onClick={() => addTable()}
-              disabled={layout.readOnly}
-            >
-              <IconAddTable />
-            </button>
-          </Tooltip>
-          <Tooltip content={t("add_area")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              onClick={() => addArea()}
-              disabled={layout.readOnly}
-            >
-              <IconAddArea />
-            </button>
-          </Tooltip>
-          <Tooltip content={t("add_note")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              onClick={() => addNote()}
-              disabled={layout.readOnly}
-            >
-              <IconAddNote />
-            </button>
-          </Tooltip>
-          <Tooltip content={t("auto_arrange")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              onClick={autoArrange}
-              disabled={layout.readOnly}
-            >
-              <i className="bi bi-magic text-xl" />
-            </button>
-          </Tooltip>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("save")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm flex items-center disabled:opacity-50"
-              onClick={save}
-              disabled={layout.readOnly}
-            >
-              <IconSaveStroked size="extra-large" />
-            </button>
-          </Tooltip>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("versions")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-xl -mt-0.5"
-              onClick={() => setSidesheet(SIDESHEET.VERSIONS)}
-            >
-              <i className="fa-solid fa-code-branch" />
-            </button>
-          </Tooltip>
-          <Divider layout="vertical" margin="8px" />
-          <Tooltip content={t("theme")} position="bottom">
-            <button
-              className="py-1 px-2 hover-2 rounded-sm text-xl -mt-0.5"
-              onClick={() => {
-                const body = document.body;
-                if (body.hasAttribute("theme-mode")) {
-                  if (body.getAttribute("theme-mode") === "light") {
-                    menu["view"]["theme"].children[1].function();
-                  } else {
-                    menu["view"]["theme"].children[0].function();
-                  }
-                }
-              }}
-            >
-              <i className="fa-solid fa-circle-half-stroke" />
-            </button>
-          </Tooltip>
-        </div>
-      </div>
-    );
-  }
 
   function getState() {
     switch (saveState) {
@@ -1902,93 +1697,4 @@ export default function ControlPanel({
     }
   }
 
-  function header() {
-    return (
-      <nav
-        className="flex justify-between pt-1 items-center whitespace-nowrap"
-        style={isRtl(i18n.language) ? { direction: "rtl" } : {}}
-      >
-        <div className="flex justify-start items-center">
-          <Link to="/">
-            <img
-              width={54}
-              src={icon}
-              alt="logo"
-              className="ms-7 min-w-[54px]"
-            />
-          </Link>
-          <div className="ms-1 mt-1">
-            <div className="flex items-center ms-3 gap-2">
-              {databases[database].image && (
-                <img
-                  src={databases[database].image}
-                  className="h-5"
-                  style={{
-                    filter:
-                      "opacity(0.4) drop-shadow(0 0 0 white) drop-shadow(0 0 0 white)",
-                  }}
-                  alt={databases[database].name + " icon"}
-                  title={databases[database].name + " diagram"}
-                />
-              )}
-              <Slot name="diagram-title-prefix" />
-              <div
-                className="text-xl flex items-center gap-1 me-1"
-                onPointerEnter={(e) => e.isPrimary && setShowEditName(true)}
-                onPointerLeave={(e) => e.isPrimary && setShowEditName(false)}
-                onPointerDown={(e) => {
-                  // Required for onPointerLeave to trigger when a touch pointer leaves
-                  // https://stackoverflow.com/a/70976017/1137077
-                  e.target.releasePointerCapture(e.pointerId);
-                }}
-                onClick={!layout.readOnly && (() => setModal(MODAL.RENAME))}
-              >
-                <span>{(isTemplate ? "Templates" : "Diagrams")}</span>
-                <span className="select-none text-zinc-400 dark:text-zinc-500 mx-1">/</span>
-                <span>{title}</span>
-                {version && (
-                  <Tag className="mt-1" color="blue" size="small">
-                    {version.substring(0, 7)}
-                  </Tag>
-                )}
-              </div>
-              {(showEditName || modal === MODAL.RENAME) && !layout.readOnly && (
-                <IconEdit />
-              )}
-            </div>
-            <div className="flex items-center">
-              <button
-                className="palette-trigger"
-                onClick={() => setPaletteOpen(true)}
-                title={`${t("search_actions")}  ${IS_APPLE ? "\u2318" : "Ctrl"}+K`}
-              >
-                <IconSearch />
-                <span className="palette-trigger-label">
-                  {t("search_actions")}
-                </span>
-                <kbd className="palette-key">{IS_APPLE ? "\u2318" : "Ctrl"}</kbd>
-                <kbd className="palette-key">K</kbd>
-              </button>
-              {layout.readOnly && <Tag size="small">{t("read_only")}</Tag>}
-              {!layout.readOnly && (
-                <Tag
-                  className="save-state-tag"
-                  size="small"
-                  type="light"
-                  prefixIcon={
-                    saveState === State.LOADING ||
-                    saveState === State.SAVING ? (
-                      <Spin size="small" />
-                    ) : null
-                  }
-                >
-                  {getState()}
-                </Tag>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-    );
-  }
 }

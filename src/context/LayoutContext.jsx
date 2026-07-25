@@ -6,9 +6,11 @@ export const LayoutContext = createContext(null);
 
 const defaultLayout = {
   header: true,
-  // On phones the 374px side panel would swallow the whole screen — start
-  // collapsed there; the View menu can always bring it back.
-  sidebar: typeof window === "undefined" || window.innerWidth >= 768,
+  // Off by default: the design runs the canvas edge to edge with floating
+  // islands over it, and editing happens in the selection inspector on the
+  // right. The list panel is still available from the command palette
+  // (View › Sidebar) for browsing a large schema.
+  sidebar: false,
   issues: true,
   toolbar: true,
   dbmlEditor: false,

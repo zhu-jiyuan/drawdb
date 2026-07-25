@@ -1,0 +1,157 @@
+/* Floating canvas islands, ported from the approved design
+   (scratchpad/oneinsp-mock.html). The canvas runs edge to edge and these sit
+   over it, instead of a full-width header bar and a wide bottom toolbar. */
+
+.island {
+  position: fixed;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--insp-line);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgba(20, 20, 40, 0.06),
+    0 6px 20px -6px rgba(20, 20, 40, 0.16);
+}
+
+.island.doc {
+  left: 16px;
+  top: 16px;
+  padding: 7px 8px 7px 10px;
+  gap: 10px;
+  max-width: calc(100vw - 32px);
+}
+
+.island.zoom {
+  left: 16px;
+  bottom: 16px;
+  padding: 6px;
+  gap: 2px;
+}
+
+.isl-logo {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: var(--accent);
+}
+
+.isl-logo svg {
+  width: 19px;
+  height: 19px;
+}
+
+.isl-meta {
+  min-width: 0;
+  text-align: start;
+}
+
+.isl-name {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: "Excalifont", "Segoe Print", "Bradley Hand", "KaiTi", cursive;
+  font-size: 17px;
+  line-height: 21px;
+  color: var(--canvas-ink);
+}
+
+.isl-state {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--canvas-ink3);
+}
+
+.isl-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2f9e44;
+}
+
+.isl-dot.busy {
+  background: #d9a441;
+}
+
+.isl-vr {
+  width: 1px;
+  align-self: stretch;
+  margin: 8px 6px;
+  background: var(--insp-line2);
+}
+
+.isl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  color: var(--canvas-ink2);
+}
+
+.isl-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.isl-btn:hover:not(:disabled) {
+  background: var(--insp-soft);
+}
+
+.isl-btn:disabled {
+  opacity: 0.35;
+}
+
+.isl-zlevel {
+  min-width: 52px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  color: var(--canvas-ink2);
+}
+
+.isl-zlevel:hover {
+  background: var(--insp-soft);
+}
+
+.isl-share {
+  flex: none;
+  height: 32px;
+  margin-left: 2px;
+  padding: 0 14px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.isl-share:hover {
+  filter: brightness(1.06);
+}
+
+/* Phones: the doc island spans the width, and the zoom island steps aside for
+   the tool switch and the bottom sheet. */
+@media (max-width: 700px) {
+  .island.doc {
+    left: 10px;
+    right: 10px;
+    top: 10px;
+  }
+  .island.zoom {
+    left: 10px;
+    bottom: 10px;
+  }
+  .isl-name {
+    font-size: 16px;
+  }
+}
