@@ -50,7 +50,6 @@ const zh_tw = {
     sidebar: "側邊欄",
     issues: "問題",
     presentation_mode: "簡報模式",
-    strict_mode: "嚴謹模式",
     field_details: "欄位詳細資料",
     reset_view: "重設檢視",
     show_grid: "顯示格線",
@@ -113,8 +112,6 @@ const zh_tw = {
     no_types: "尚無型別",
     no_types_text: "建立自訂資料型別",
     no_issues: "未偵測到問題。",
-    strict_mode_is_on_no_issues:
-      "嚴謹模式已關閉，因此不會顯示任何問題。",
     name: "名稱",
     type: "型別",
     null: "允許空值",

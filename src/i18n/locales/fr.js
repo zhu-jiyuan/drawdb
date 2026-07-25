@@ -45,7 +45,6 @@ const fr = {
     sidebar: "Barre latérale",
     issues: "Problèmes",
     presentation_mode: "Mode présentation",
-    strict_mode: "Mode strict",
     field_details: "Détails du champ",
     reset_view: "Réinitialiser la vue",
     show_grid: "Afficher la grille",
@@ -102,8 +101,6 @@ const fr = {
     no_types: "Aucun type",
     no_types_text: "Créez vos propres types de données personnalisés",
     no_issues: "Aucun problème détecté.",
-    strict_mode_is_on_no_issues:
-      "Le mode strict est désactivé, donc aucun problème ne sera affiché.",
     name: "Nom",
     type: "Type",
     null: "Null",

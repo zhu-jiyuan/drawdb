@@ -50,7 +50,6 @@ const bg = {
         sidebar: "Странична лента",
         issues: "Проблеми",
         presentation_mode: "Режим на презентация",
-        strict_mode: "Строг режим",
         field_details: "Детайли на полето",
         reset_view: "Възстанови изгледа",
         show_grid: "Покажи мрежа",
@@ -113,8 +112,6 @@ const bg = {
         no_types: "Няма типове",
         no_types_text: "Направете свои собствени типове данни",
         no_issues: "Не са открити проблеми.",
-        strict_mode_is_on_no_issues:
-            "Строгият режим е изключен, така че няма да се показват проблеми.",
         name: "Име",
         type: "Тип",
         null: "Null",

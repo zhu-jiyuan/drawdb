@@ -45,7 +45,6 @@ const pl = {
     sidebar: "Pasek boczny",
     issues: "Problemy",
     presentation_mode: "Tryb prezentacji",
-    strict_mode: "Tryb ścisły",
     field_details: "Szczegóły pola",
     reset_view: "Resetuj widok",
     show_grid: "Pokaż siatkę",
@@ -106,8 +105,6 @@ const pl = {
     no_types: "Brak typów",
     no_types_text: "Twórz własne typy danych",
     no_issues: "Nie wykryto żadnych problemów.",
-    strict_mode_is_on_no_issues:
-      "Tryb ścisły jest wyłączony, więc żadne problemy nie zostaną wyświetlone.",
     name: "Nazwa",
     type: "Typ",
     null: "Null",

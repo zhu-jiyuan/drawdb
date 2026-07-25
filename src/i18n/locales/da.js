@@ -50,7 +50,6 @@ const da = {
     sidebar: "Sidebjælke",
     issues: "Problemer",
     presentation_mode: "Præsentations tilstand",
-    strict_mode: "Streng tilstand",
     field_details: "Felt detaljer",
     reset_view: "Nulstil visning",
     show_grid: "Vis gitter",
@@ -113,8 +112,6 @@ const da = {
     no_types: "Ingen typer",
     no_types_text: "Lav dine egne tilpassede data typer",
     no_issues: "Ingen problemer blev opdaget.",
-    strict_mode_is_on_no_issues:
-      "Streng tilstand er slået fra, så ingen problemer vil blive vist.",
     name: "Navn",
     type: "Type",
     null: "Nul",

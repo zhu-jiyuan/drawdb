@@ -50,7 +50,6 @@ const nl = {
     sidebar: "Zijbalk",
     issues: "Problemen",
     presentation_mode: "Presentatiemodus",
-    strict_mode: "Strikte modus",
     field_details: "Veld details",
     reset_view: "Beeld resetten",
     show_grid: "Raster tonen",
@@ -113,8 +112,6 @@ const nl = {
     no_types: "Geen types",
     no_types_text: "Maak uw eigen aangepaste gegevenstypen",
     no_issues: "Er zijn geen problemen gedetecteerd.",
-    strict_mode_is_on_no_issues:
-      "Strikte modus is uitgeschakeld, dus er worden geen problemen weergegeven.",
     name: "Naam",
     type: "Type",
     null: "Null",

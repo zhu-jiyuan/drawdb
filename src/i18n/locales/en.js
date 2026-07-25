@@ -104,7 +104,7 @@ const en = {
     toolbar: "Toolbar",
     issues: "Issues",
     presentation_mode: "Presentation mode",
-    strict_mode: "Strict mode",
+    hide_issues: "Hide issues",
     field_details: "Field details",
     reset_view: "Reset view",
     show_grid: "Show grid",
@@ -173,8 +173,7 @@ const en = {
     no_types: "No types",
     no_types_text: "Make your own custom data types",
     no_issues: "No issues were detected.",
-    strict_mode_is_on_no_issues:
-      "Strict mode is off so no issues will be displayed.",
+    issues_hidden: "Issues are hidden. Turn off Hide issues to see them.",
     name: "Name",
     type: "Type",
     null: "Null",

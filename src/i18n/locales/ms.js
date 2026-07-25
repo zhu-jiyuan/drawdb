@@ -47,7 +47,6 @@ const ms = {
     sidebar: "Bar sisi",
     issues: "Isu",
     presentation_mode: "Mod pembentangan",
-    strict_mode: "Mod ketat",
     field_details: "Butiran medan",
     reset_view: "Set semula paparan",
     show_grid: "Tunjuk grid",
@@ -110,8 +109,6 @@ const ms = {
     no_types: "Tiada jenis",
     no_types_text: "Cipta jenis data tersuai anda sendiri",
     no_issues: "Tiada isu ditemui.",
-    strict_mode_is_on_no_issues:
-      "Mod ketat diaktifkan, jadi isu tidak akan dipaparkan.",
     name: "Nama",
     type: "Jenis",
     null: "Null",

@@ -44,7 +44,6 @@ const od = {
     sidebar: "ସାଇଡବାର୍",
     issues: "ସମସ୍ୟାଗୁଡିକ",
     presentation_mode: "ପ୍ରସ୍ତୁତି ମୋଡ୍",
-    strict_mode: "ସ୍ତ୍ରିକ୍ଟ ମୋଡ୍",
     field_details: "ଫିଲ୍ଡ ବିବରଣୀ",
     reset_view: "ଦୃଶ୍ୟ ପୁନଃସେଟ୍ କରନ୍ତୁ",
     show_grid: "ଗ୍ରିଡ୍ ଦେଖାନ୍ତୁ",
@@ -99,8 +98,6 @@ const od = {
     no_types: "କୌଣସି ପ୍ରକାର ନାହିଁ",
     no_types_text: "ଆପଣଙ୍କର ନିଜସ୍ୱ କଷ୍ଟମ୍ ଡାଟା ପ୍ରକାର ତିଆରି କରନ୍ତୁ",
     no_issues: "କୌଣସି ସମସ୍ୟା ମିଳିଲା ନାହିଁ।",
-    strict_mode_is_on_no_issues:
-      "ସ୍ତ୍ରିକ୍ଟ ମୋଡ୍ ବନ୍ଦ ଅଟେ ତେଣୁ କୌଣସି ସମସ୍ୟା ଦେଖାଯିବ ନାହିଁ।",
     name: "ନାମ",
     type: "ପ୍ରକାର",
     null: "Null",

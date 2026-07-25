@@ -45,7 +45,6 @@ const de = {
     sidebar: "Seitenleiste",
     issues: "Probleme",
     presentation_mode: "Präsentationsmodus",
-    strict_mode: "Strikter Modus",
     field_details: "Angaben zum Feld",
     reset_view: "Ansicht zurücksetzen",
     show_grid: "Gitter anzeigen",
@@ -106,8 +105,6 @@ const de = {
     no_types: "Keine Typen",
     no_types_text: "Fügen Sie benutzerdefinierte Typen hinzu!",
     no_issues: "Keine Probleme gefunden.",
-    strict_mode_is_on_no_issues:
-      "Der strenge Modus ist ausgeschaltet, es werden keine Probleme angezeigt.",
     name: "Name",
     type: "Typ",
     null: "Null",

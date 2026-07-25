@@ -45,7 +45,6 @@ const pt = {
     sidebar: "Barra lateral",
     issues: "Problemas",
     presentation_mode: "Modo de apresentação",
-    strict_mode: "Modo estrito",
     field_details: "Detalhes do campo",
     reset_view: "Redefinir visualização",
     show_grid: "Mostrar grade",
@@ -108,8 +107,6 @@ const pt = {
     no_types: "Sem tipos",
     no_types_text: "Crie seus próprios tipos de dados personalizados",
     no_issues: "Nenhum problema foi detectado.",
-    strict_mode_is_on_no_issues:
-      "O modo estrito está desativado, portanto, nenhum problema será exibido.",
     name: "Nome",
     type: "Tipo",
     null: "Nulo",

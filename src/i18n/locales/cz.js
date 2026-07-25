@@ -45,7 +45,6 @@ const cz = {
     sidebar: "Postranní panel",
     issues: "Problémy",
     presentation_mode: "Prezentační režim",
-    strict_mode: "Přísný režim",
     field_details: "Podrobnosti pole",
     reset_view: "Obnovit zobrazení",
     show_grid: "Zobrazit mřížku",
@@ -107,8 +106,6 @@ const cz = {
     no_types: "Žádné typy",
     no_types_text: "Vytvořte si vlastní typy dat",
     no_issues: "Nebyly zjištěny žádné problémy.",
-    strict_mode_is_on_no_issues:
-      "Přísný režim je vypnutý, takže se nebudou zobrazovat žádné problémy.",
     name: "Jméno",
     type: "Typ",
     null: "Null",

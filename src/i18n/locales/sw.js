@@ -50,7 +50,6 @@ const sw = {
     sidebar: "Upau wa kando",
     issues: "Matatizo",
     presentation_mode: "Hali ya uwasilishaji",
-    strict_mode: "Hali ya ukali",
     field_details: "Maelezo ya uga",
     reset_view: "Rejesha mtazamo",
     show_grid: "Onyesha gridi",
@@ -113,8 +112,6 @@ const sw = {
     no_types: "Hakuna aina",
     no_types_text: "Unda aina zako maalum za data",
     no_issues: "Hakuna matatizo yaliyopatikana.",
-    strict_mode_is_on_no_issues:
-      "Hali ya ukali imewashwa, kwa hiyo matatizo hayataonyeshwa.",
     name: "Jina",
     type: "Aina",
     null: "Null",

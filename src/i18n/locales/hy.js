@@ -45,7 +45,6 @@ const hy = {
     sidebar: "Կողմնագոտի",
     issues: "Խնդիրներ",
     presentation_mode: "Ներկայացման ռեժիմ",
-    strict_mode: "Խիստ ռեժիմ",
     field_details: "Դաշտի մանրամասներ",
     reset_view: "Վերականգնել տեսքը",
     show_grid: "Ցուցադրել ցանցը",
@@ -109,8 +108,6 @@ const hy = {
     no_types: "Տիպեր չկան",
     no_types_text: "Ստեղծեք ձեր սեփական տվյալների տիպերը",
     no_issues: "Խնդիրներ չկան",
-    strict_mode_is_on_no_issues:
-      "Խիստ ռեժիմը միցված է, ուստի խնդիրներ չեն ցուցադրվի։",
     name: "Անուն",
     type: "Տիպ",
     null: "Null",

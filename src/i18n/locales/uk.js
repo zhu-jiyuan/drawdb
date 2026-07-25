@@ -50,7 +50,6 @@ const uk = {
     sidebar: "Бічна панель",
     issues: "Проблеми",
     presentation_mode: "Режим презентації",
-    strict_mode: "Строгий режим",
     field_details: "Деталі поля",
     reset_view: "Скинути перегляд",
     show_grid: "Показати сітку",
@@ -114,8 +113,6 @@ const uk = {
     no_types: "Немає типів",
     no_types_text: "Створіть власні типи даних",
     no_issues: "Проблем не виявлено.",
-    strict_mode_is_on_no_issues:
-      "Строгий режим вимкнено, тому проблеми не відображаються.",
     name: "Назва",
     type: "Тип",
     null: "Null",

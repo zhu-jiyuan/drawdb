@@ -50,7 +50,6 @@ const es = {
     sidebar: "Barra lateral",
     issues: "Problemas",
     presentation_mode: "Modo de presentación",
-    strict_mode: "Modo estricto",
     field_details: "Detalles del campo",
     reset_view: "Restablecer vista",
     show_grid: "Mostrar cuadrícula",
@@ -115,8 +114,6 @@ const es = {
     no_types: "Sin tipos",
     no_types_text: "¡Crea tipos de datos personalizados!",
     no_issues: "No se detectaron problemas",
-    strict_mode_is_on_no_issues:
-      "El modo estricto está desactivado, por lo que no se mostrarán problemas.",
     name: "Nombre",
     type: "Tipo",
     null: "Nulo",

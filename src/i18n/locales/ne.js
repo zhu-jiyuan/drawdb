@@ -47,7 +47,6 @@ const ne = {
     sidebar: "साइडबार",
     issues: "समस्याहरू",
     presentation_mode: "प्रस्तुति मोड",
-    strict_mode: "स्ट्रिक्ट मोड",
     field_details: "फिल्ड विवरणहरू",
     reset_view: "दृश्य रिसेट गर्नुहोस्",
     show_grid: "ग्रिड देखाउनुहोस्",
@@ -101,8 +100,6 @@ const ne = {
     no_types: "कुनै प्रकारहरू छैनन्",
     no_types_text: "आफ्नो कस्टम डेटा प्रकारहरू बनाउनुहोस्",
     no_issues: "कुनै समस्या पाइएको छैन।",
-    strict_mode_is_on_no_issues:
-      "स्ट्रिक्ट मोड बन्द छ त्यसैले कुनै समस्या देखाइने छैन।",
     name: "नाम",
     type: "प्रकार",
     null: "नल",

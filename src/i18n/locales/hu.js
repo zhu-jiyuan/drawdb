@@ -52,7 +52,6 @@ const hu = {
     toolbar: "Eszköztár",
     issues: "Problémák",
     presentation_mode: "Prezentációs mód",
-    strict_mode: "Szigorú mód",
     field_details: "Mezők részletei",
     reset_view: "Nézet alaphelyzetbe",
     show_grid: "Rács",
@@ -116,8 +115,6 @@ const hu = {
     no_types: "Nincs típus",
     no_types_text: "Készítsen egyedi adattípusokat",
     no_issues: "Nem észleltünk problémát.",
-    strict_mode_is_on_no_issues:
-      "A szigorú mód le van tiltva, így a problémák nem fognak megjelenni.",
     name: "Név",
     type: "Típus",
     null: "Null",

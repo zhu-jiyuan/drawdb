@@ -49,7 +49,6 @@ const bn = {
     sidebar: "সাইডবার",
     issues: "সমস্যা",
     presentation_mode: "প্রেজেন্টেশন মোড",
-    strict_mode: "স্ট্রিক্ট মোড",
     field_details: "ফিল্ডের বিবরণ",
     reset_view: "ভিউ রিসেট করুন",
     show_grid: "গ্রিড দেখান",
@@ -111,8 +110,6 @@ const bn = {
     no_types: "কোনও টাইপ নেই",
     no_types_text: "আপনার নিজস্ব কাস্টম ডেটা টাইপগুলি তৈরি করুন",
     no_issues: "কোনও সমস্যা সনাক্ত করা যায়নি।",
-    strict_mode_is_on_no_issues:
-      "স্ট্রিক্ট মোড বন্ধ রয়েছে, তাই কোনও সমস্যা প্রদর্শিত হবে না।",
     name: "নাম",
     type: "টাইপ",
     null: "নাল",

@@ -4,7 +4,10 @@ import { tableWidth } from "../data/constants";
 import { queryConfig } from "../utils/queryConfig";
 
 const defaultSettings = {
-  strictMode: false,
+  // True hides the Issues list. Named `strictMode` until it became clear the
+  // name said the opposite of what the flag did, which is why its menu toggle
+  // was the only inverted one of fourteen.
+  hideIssues: false,
   showFieldSummary: true,
   showGrid: true,
   snapToGrid: false,
@@ -32,6 +35,15 @@ export default function SettingsContextProvider({ children }) {
     let baseSettings = savedSettings
       ? { ...defaultSettings, ...JSON.parse(savedSettings) }
       : defaultSettings;
+
+    // Carry over the old name so anyone who had issues hidden keeps them hidden.
+    if (
+      baseSettings.hideIssues === undefined &&
+      baseSettings.strictMode !== undefined
+    ) {
+      baseSettings = { ...baseSettings, hideIssues: baseSettings.strictMode };
+    }
+    delete baseSettings.strictMode;
 
     // One-time flip to the Excalidraw look for settings saved before it
     // became the default; the user's explicit choice sticks afterwards.

@@ -50,7 +50,6 @@ const pa_pk = {
     sidebar: "سائیڈبار",
     issues: "مسئلے",
     presentation_mode: "پیشکاری موڈ",
-    strict_mode: "سخت موڈ",
     field_details: "فیلڈ دیاں تفصیل",
     reset_view: "ویکھن دا انداز ری سیٹ کرو",
     show_grid: "گرڈ وکھاؤ",
@@ -113,8 +112,6 @@ const pa_pk = {
     no_types: "کوئی قسم نہیں",
     no_types_text: "اپنی کسٹم ڈیٹا دیاں اقسام بناؤ",
     no_issues: "کوئی مسئلہ نہیں لبیا",
-    strict_mode_is_on_no_issues:
-      "سخت موڈ بند اے اس لئی کوئی مسئلے نہیں وکھائے جا رہے۔",
     name: "ناں",
     type: "قسم",
     null: "نل",

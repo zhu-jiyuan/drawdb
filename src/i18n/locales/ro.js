@@ -45,7 +45,6 @@ const ro = {
     sidebar: "Bară laterală",
     issues: "Probleme",
     presentation_mode: "Mod prezentare",
-    strict_mode: "Mod strict",
     field_details: "Detalii câmp",
     reset_view: "Resetează vizualizarea",
     show_grid: "Arată grilă",
@@ -107,8 +106,6 @@ const ro = {
     no_types: "Fără tipuri",
     no_types_text: "Creează-ți propriile tipuri de date personalizate",
     no_issues: "Nu au fost detectate probleme.",
-    strict_mode_is_on_no_issues:
-      "Modul strict este dezactivat, așa că nu vor fi afișate probleme.",
     name: "Nume",
     type: "Tip",
     null: "Null",

@@ -45,7 +45,6 @@ const no = {
     sidebar: "Sidepanel",
     issues: "Problemer",
     presentation_mode: "Presentasjonsmodus",
-    strict_mode: "Streng modus",
     field_details: "Feltdetaljer",
     reset_view: "Tilbakestill visning",
     show_grid: "Vis rutenett",
@@ -106,8 +105,6 @@ const no = {
     no_types: "Ingen typer",
     no_types_text: "Lag dine egne egendefinerte datatyper",
     no_issues: "Ingen problemer ble oppdaget.",
-    strict_mode_is_on_no_issues:
-      "Streng modus er av, så ingen problemer vil bli vist.",
     name: "Navn",
     type: "Type",
     null: "Null",

@@ -45,7 +45,6 @@ const te = {
     sidebar: "సైడ్బార్",
     issues: "సమస్యలు",
     presentation_mode: "ప్రెజెంటేషన్ మోడ్",
-    strict_mode: "స్ట్రిక్ట్ మోడ్",
     field_details: "ఫీల్డ్ వివరాలు",
     reset_view: "దృశ్యం రీసెట్ చేయి",
     show_grid: "గ్రిడ్ చూపించు",
@@ -100,8 +99,6 @@ const te = {
     no_types: "ఏ రకాలు లేవు",
     no_types_text: "మీ సొంత కస్టమ్ డేటా రకాలను సృష్టించండి",
     no_issues: "ఏ సమస్యలు లభించలేదు.",
-    strict_mode_is_on_no_issues:
-      "స్ట్రిక్ట్ మోడ్ ఆఫ్ లో ఉంది కాబట్టి ఏ సమస్యలు చూపించబడవు.",
     name: "పేరు",
     type: "రకం",
     null: "Null",

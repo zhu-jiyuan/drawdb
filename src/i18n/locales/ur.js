@@ -50,7 +50,6 @@ const ur = {
     sidebar: "سائیڈ بار",
     issues: "مسائل",
     presentation_mode: "پریزنٹیشن موڈ",
-    strict_mode: "سخت موڈ",
     field_details: "فیلڈ کی تفصیلات",
     reset_view: "منظر کو دوبارہ ترتیب دیں",
     show_grid: "گرڈ دکھائیں",
@@ -113,8 +112,6 @@ const ur = {
     no_types: "کوئی اقسام نہیں",
     no_types_text: "اپنی کسٹم ڈیٹا کی اقسام بنائیں",
     no_issues: "کوئی مسائل نہیں ملے",
-    strict_mode_is_on_no_issues:
-      "سخت موڈ بند ہے اس لیے کوئی مسائل نہیں دکھائے جائیں گے۔",
     name: "نام",
     type: "قسم",
     null: "Null",

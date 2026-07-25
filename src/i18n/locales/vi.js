@@ -48,7 +48,6 @@ const vi = {
     sidebar: "Thanh bên",
     issues: "Vấn đề",
     presentation_mode: "Chế độ trình bày",
-    strict_mode: "Chế độ nghiêm ngặt",
     field_details: "Chi tiết trường",
     reset_view: "Đặt lại chế độ xem",
     show_grid: "Hiển thị lưới",
@@ -111,8 +110,6 @@ const vi = {
     no_types: "Không có kiểu",
     no_types_text: "Tạo kiểu dữ liệu tùy chỉnh của riêng bạn",
     no_issues: "Không có vấn đề nào được phát hiện.",
-    strict_mode_is_on_no_issues:
-      "Chế độ nghiêm ngặt bị tắt nên sẽ không có vấn đề nào được hiển thị.",
     name: "Tên",
     type: "Kiểu",
     null: "Không có giá trị",

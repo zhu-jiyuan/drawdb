@@ -52,7 +52,6 @@ const as = {
       sidebar: "চাইডবাৰ",
       issues: "সমস্যাসমূহ",
       presentation_mode: "প্ৰেজেন্টেশ্যন মোড",
-      strict_mode: "কঠোৰ মোড",
       field_details: "ক্ষেত্ৰৰ বিৱৰণ",
       reset_view: "দৃষ্টি ৰিসেট কৰক",
       show_grid: "গ্ৰিড প্ৰদৰ্শন কৰক",
@@ -115,8 +114,6 @@ const as = {
       no_types: "কোনো টাইপ নাই",
       no_types_text: "আপোনাৰ নিজা কাষ্টম ডাটা টাইপ বনাওক",
       no_issues: "কোনো সমস্যা চিনাক্ত হোৱা নাই।",
-      strict_mode_is_on_no_issues:
-        "কঠোৰ মোড বন্ধ আছে সেয়ে কোনো সমস্যা দেখুওৱা নহ'ব।",
       name: "নাম",
       type: "টাইপ",
       null: "Null",

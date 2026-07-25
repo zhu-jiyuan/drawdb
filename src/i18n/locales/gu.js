@@ -50,7 +50,6 @@ const gu = {
     sidebar: "સાઇડબાર",
     issues: "સમસ્યાઓ",
     presentation_mode: "પ્રેઝન્ટેશન મોડ",
-    strict_mode: "સ્ટ્રિક્ટ મોડ",
     field_details: "ફિલ્ડ વિગતો",
     reset_view: "દ્રશ્ય રિસેટ કરો",
     show_grid: "ગ્રિડ બતાવો",
@@ -113,8 +112,6 @@ const gu = {
     no_types: "કોઈ પ્રકારો નથી",
     no_types_text: "તમારા પોતાના કસ્ટમ ડેટા પ્રકારો બનાવો",
     no_issues: "કોઈ સમસ્યાઓ મળી નથી.",
-    strict_mode_is_on_no_issues:
-      "સ્ટ્રિક્ટ મોડ બંધ છે તેથી કોઈ સમસ્યાઓ બતાવવામાં આવશે નહીં.",
     name: "નામ",
     type: "પ્રકાર",
     null: "નલ",

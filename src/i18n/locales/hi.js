@@ -46,7 +46,6 @@ const hi = {
     sidebar: "साइडबार",
     issues: "समस्याएं",
     presentation_mode: "प्रस्तुति मोड",
-    strict_mode: "स्ट्रिक्ट मोड",
     field_details: "फ़ील्ड डिटेल्स",
     reset_view: "दृश्य रीसेट करें",
     show_grid: "ग्रिड दिखाएं",
@@ -101,8 +100,6 @@ const hi = {
     no_types: "कोई प्रकार नहीं",
     no_types_text: "अपने स्वयं के कस्टम डेटा प्रकार बनाएं",
     no_issues: "कोई समस्याएं नहीं पाए गए।",
-    strict_mode_is_on_no_issues:
-      "स्ट्रिक्ट मोड बंद है इसलिए कोई समस्याएं नहीं दिखाए जाएंगे।",
     name: "नाम",
     type: "प्रकार",
     null: "व्यर्थ",

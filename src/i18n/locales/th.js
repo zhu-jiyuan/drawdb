@@ -50,7 +50,6 @@ const th = {
     sidebar: "แถบด้านข้าง",
     issues: "ปัญหา",
     presentation_mode: "โหมดนำเสนอ",
-    strict_mode: "โหมดเข้มงวด",
     field_details: "รายละเอียดฟิลด์",
     reset_view: "รีเซ็ตมุมมอง",
     show_grid: "แสดงเส้นกริด",
@@ -113,8 +112,6 @@ const th = {
     no_types: "ไม่มีชนิด",
     no_types_text: "สร้างชนิดข้อมูลของคุณเอง",
     no_issues: "ไม่พบปัญหา",
-    strict_mode_is_on_no_issues:
-      "โหมดเข้มงวดปิดอยู่ ดังนั้นจะไม่แสดงปัญหา",
     name: "ชื่อ",
     type: "ชนิด",
     null: "ค่าว่าง",

@@ -45,7 +45,6 @@ const fa = {
     sidebar: "نوار کناری",
     issues: "مشکلات",
     presentation_mode: "حالت ارائه",
-    strict_mode: "حالت سختگیرانه",
     field_details: "جزئیات فیلد",
     reset_view: "بازنشانی نما",
     show_grid: "نمایش شبکه",
@@ -100,8 +99,6 @@ const fa = {
     no_types: "بدون نوع",
     no_types_text: "نوع داده سفارشی خود را بسازید",
     no_issues: "هیچ مشکلی شناسایی نشد.",
-    strict_mode_is_on_no_issues:
-      "حالت سختگیرانه خاموش است بنابراین هیچ مشکلی نمایش داده نخواهد شد.",
     name: "نام",
     type: "نوع",
     null: "خالی",

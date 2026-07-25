@@ -47,7 +47,6 @@ const mr = {
     sidebar: "साइडबार",
     issues: "समस्या",
     presentation_mode: "प्रस्तुतीकरण मोड",
-    strict_mode: "कडक मोड",
     field_details: "फील्ड तपशील",
     reset_view: "दृश्य रीसेट करा",
     show_grid: "ग्रिड दाखवा",
@@ -110,8 +109,6 @@ const mr = {
     no_types: "कोणतेही प्रकार नाहीत",
     no_types_text: "आपले स्वतःचे कस्टम डेटा प्रकार तयार करा",
     no_issues: "कोणत्याही समस्या आढळल्या नाहीत.",
-    strict_mode_is_on_no_issues:
-      "कडक मोड बंद आहे म्हणून कोणत्याही समस्या दाखवल्या जाणार नाहीत.",
     name: "नाव",
     type: "प्रकार",
     null: "नल",

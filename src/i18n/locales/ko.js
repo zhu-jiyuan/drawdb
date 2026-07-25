@@ -45,7 +45,6 @@ const ko = {
     sidebar: "사이드바",
     issues: "이슈",
     presentation_mode: "발표 모드",
-    strict_mode: "엄격 모드",
     field_details: "필드 세부 사항",
     reset_view: "보기 초기화",
     show_grid: "그리드 보기",
@@ -106,8 +105,6 @@ const ko = {
     no_types: "유형 없음",
     no_types_text: "사용자 정의 데이터 유형을 만드세요",
     no_issues: "감지된 이슈가 없습니다.",
-    strict_mode_is_on_no_issues:
-      "엄격 모드가 꺼져 있어 이슈가 표시되지 않습니다.",
     name: "이름",
     type: "유형",
     null: "널",

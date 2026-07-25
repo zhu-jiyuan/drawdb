@@ -45,7 +45,6 @@ const it = {
     sidebar: "Barra laterale",
     issues: "Problemi",
     presentation_mode: "Presentazione",
-    strict_mode: "Modalità strict",
     field_details: "Dettagli sul campo",
     reset_view: "Ristabilire vista",
     show_grid: "Mostra griglia",
@@ -108,8 +107,6 @@ const it = {
     no_types: "Nessun tipo",
     no_types_text: "Aggiungi un tipo!",
     no_issues: "Nessun problema da segnalare",
-    strict_mode_is_on_no_issues:
-      "La modalità strict è disattivata, i problemi non verrano segnalati.",
     name: "Nome",
     type: "Tipo",
     null: "Nullo",

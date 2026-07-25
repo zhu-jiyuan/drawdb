@@ -50,7 +50,6 @@ const pa = {
     sidebar: "ਸਾਈਡਬਾਰ",
     issues: "ਮੁੱਦੇ",
     presentation_mode: "ਪੇਸ਼ਕਾਰੀ ਮੋਡ",
-    strict_mode: "ਸਖ਼ਤ ਮੋਡ",
     field_details: "ਖੇਤਰ ਵੇਰਵਾ",
     reset_view: "ਵੇਖਣ ਨੂੰ ਰੀਸੈਟ ਕਰੋ",
     show_grid: "ਗਰਿੱਡ ਦਿਖਾਓ",
@@ -113,8 +112,6 @@ const pa = {
     no_types: "ਕੋਈ ਕਿਸਮਾਂ ਨਹੀਂ",
     no_types_text: "ਆਪਣੇ ਆਪ ਦੇ ਕਸਟਮ ਡੇਟਾ ਕਿਸਮਾਂ ਬਣਾਓ",
     no_issues: "ਕੋਈ ਸਮੱਸਿਆ ਨਹੀਂ ਮਿਲੀ।",
-    strict_mode_is_on_no_issues:
-      "ਸਖ਼ਤ ਮੋਡ ਬੰਦ ਹੈ, ਇਸ ਲਈ ਕੋਈ ਸਮੱਸਿਆ ਦਿਖਾਈ ਨਹੀਂ ਜਾਵੇਗੀ।",
     name: "ਨਾਮ",
     type: "ਕਿਸਮ",
     null: "ਨੱਲ",

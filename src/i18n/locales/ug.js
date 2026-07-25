@@ -45,7 +45,6 @@ const ug = {
     sidebar: "يانتۇ بار",
     issues: "مەسىلىلەر",
     presentation_mode: "تەqdimات رېژىمى",
-    strict_mode: "تىزىملىك رېژىمى",
     field_details: "ئالاقە تەپسىلاتلىرى",
     reset_view: "كۆرۈشنى قايتا قۇرۇش",
     show_grid: "تارماقنى كۆرسىتىش",
@@ -99,8 +98,6 @@ const ug = {
     no_types: "تۈرلەر يوق",
     no_types_text: "خاس سانلىق مەلۇمات تۈرلىرىنى ياساڭ",
     no_issues: "مەسىلىلەر تېپىلمىدى.",
-    strict_mode_is_on_no_issues:
-      "تىزىملىك رېژىمى قوزغىتىلغان، شۇڭا مەسىلىلەر كۆرۈلمەيدۇ.",
     name: "ئاد",
     type: "تۈر",
     null: "Null",

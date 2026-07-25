@@ -93,6 +93,18 @@ import ConfigureCustomTypes from "./ConfigureCustomTypes";
 import { useDiagramList } from "./Modal/Open/hooks/useDiagramList";
 import { mergeDiagrams, sortDiagrams } from "./Modal/Open/diagram";
 
+// Dialects offered when the diagram is database-agnostic. Import and export each
+// spelled all six out in full, so adding one meant two edits across ~190 lines
+// that differed only in these three columns.
+const GENERIC_DIALECTS = [
+  { db: DB.MYSQL, name: "MySQL", to: jsonToMySQL },
+  { db: DB.POSTGRES, name: "PostgreSQL", to: jsonToPostgreSQL },
+  { db: DB.SQLITE, name: "SQLite", to: jsonToSQLite },
+  { db: DB.MARIADB, name: "MariaDB", to: jsonToMariaDB },
+  { db: DB.MSSQL, name: "MSSQL", to: jsonToSQLServer },
+  { db: DB.ORACLESQL, name: "Oracle", label: "Beta", to: jsonToOracleSQL },
+];
+
 export default function ControlPanel({
   title,
   setTitle,
@@ -119,6 +131,20 @@ export default function ControlPanel({
     }));
     setModal(modalType);
   };
+
+  // Every code export opens the modal first, then fills it in — keep that order,
+  // the modal shows a spinner until data lands.
+  const exportCode = (build, extension = "sql") => {
+    openExportModal(MODAL.CODE);
+    setExportData((prev) => ({ ...prev, data: build(), extension }));
+  };
+
+  const sqlPayload = () => ({
+    tables,
+    references: relationships,
+    types,
+    database,
+  });
   const [importFrom, setImportFrom] = useState(IMPORT_FROM.JSON);
   const { saveState, setSaveState } = useSaveState();
   const { layout, setLayout } = useLayout();
@@ -562,7 +588,7 @@ export default function ControlPanel({
   const zoomOut = () =>
     setTransform((prev) => ({ ...prev, zoom: prev.zoom / 1.2 }));
   const viewStrictMode = () => {
-    setSettings((prev) => ({ ...prev, strictMode: !prev.strictMode }));
+    setSettings((prev) => ({ ...prev, hideIssues: !prev.hideIssues }));
   };
   const viewFieldSummary = () => {
     setSettings((prev) => ({
@@ -1072,58 +1098,18 @@ export default function ControlPanel({
         ],
       },
       import_from_source: {
+        // Only a database-agnostic diagram offers a choice of dialect; once the
+        // diagram has a database, the entry acts directly (see `function`).
         ...(database === DB.GENERIC && {
-          children: [
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.MYSQL);
-              },
-              name: "MySQL",
-              disabled: layout.readOnly,
+          children: GENERIC_DIALECTS.map(({ db, name, label }) => ({
+            name,
+            label,
+            disabled: layout.readOnly,
+            function: () => {
+              setModal(MODAL.IMPORT_SRC);
+              setImportDb(db);
             },
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.POSTGRES);
-              },
-              name: "PostgreSQL",
-              disabled: layout.readOnly,
-            },
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.SQLITE);
-              },
-              name: "SQLite",
-              disabled: layout.readOnly,
-            },
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.MARIADB);
-              },
-              name: "MariaDB",
-              disabled: layout.readOnly,
-            },
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.MSSQL);
-              },
-              name: "MSSQL",
-              disabled: layout.readOnly,
-            },
-            {
-              function: () => {
-                setModal(MODAL.IMPORT_SRC);
-                setImportDb(DB.ORACLESQL);
-              },
-              name: "Oracle",
-              label: "Beta",
-              disabled: layout.readOnly,
-            },
-          ],
+          })),
         }),
         function: () => {
           if (database === DB.GENERIC) return;
@@ -1134,127 +1120,15 @@ export default function ControlPanel({
       },
       export_source: {
         ...(database === DB.GENERIC && {
-          children: [
-            {
-              name: "MySQL",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToMySQL({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-            {
-              name: "PostgreSQL",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToPostgreSQL({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-            {
-              name: "SQLite",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToSQLite({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-            {
-              name: "MariaDB",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToMariaDB({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-            {
-              name: "MSSQL",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToSQLServer({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-            {
-              label: "Beta",
-              name: "Oracle",
-              function: () => {
-                openExportModal(MODAL.CODE);
-                const src = jsonToOracleSQL({
-                  tables: tables,
-                  references: relationships,
-                  types: types,
-                  database: database,
-                });
-                setExportData((prev) => ({
-                  ...prev,
-                  data: src,
-                  extension: "sql",
-                }));
-              },
-            },
-          ],
+          children: GENERIC_DIALECTS.map(({ name, label, to }) => ({
+            name,
+            label,
+            function: () => exportCode(() => to(sqlPayload())),
+          })),
         }),
         function: () => {
           if (database === DB.GENERIC) return;
-          openExportModal(MODAL.CODE);
-          const src = exportSQL({
-            tables: tables,
-            references: relationships,
-            types: types,
-            database: database,
-            enums: enums,
-          });
-          setExportData((prev) => ({
-            ...prev,
-            data: src,
-            extension: "sql",
-          }));
+          exportCode(() => exportSQL({ ...sqlPayload(), enums }));
         },
       },
       export_as: {
@@ -1518,11 +1392,11 @@ export default function ControlPanel({
         function: toggleDBMLEditor,
         shortcut: "Alt+E",
       },
-      strict_mode: {
-        state: settings.strictMode ? (
-          <i className="bi bi-toggle-off" />
-        ) : (
+      hide_issues: {
+        state: settings.hideIssues ? (
           <i className="bi bi-toggle-on" />
+        ) : (
+          <i className="bi bi-toggle-off" />
         ),
         function: viewStrictMode,
         shortcut: "Ctrl+Shift+M",

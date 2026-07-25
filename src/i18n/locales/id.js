@@ -45,7 +45,6 @@ const id = {
     sidebar: "Bilah Samping",
     issues: "Masalah",
     presentation_mode: "Mode presentasi",
-    strict_mode: "Mode ketat",
     field_details: "Detail bidang",
     reset_view: "Atur ulang tampilan",
     show_grid: "Tampilkan grid",
@@ -112,8 +111,6 @@ const id = {
     no_types: "Tidak ada tipe",
     no_types_text: "Buat tipe data kustom Anda sendiri",
     no_issues: "Tidak ada masalah yang terdeteksi.",
-    strict_mode_is_on_no_issues:
-      "Mode ketat dimatikan sehingga tidak ada masalah yang akan ditampilkan.",
     name: "Nama",
     type: "Jenis",
     null: "Kosong",

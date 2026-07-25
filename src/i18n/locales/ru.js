@@ -45,7 +45,6 @@ const ru = {
     sidebar: "Боковая панель",
     issues: "Проблемы",
     presentation_mode: "Режим презентации",
-    strict_mode: "Строгий режим",
     field_details: "Подробности поля",
     reset_view: "Сбросить вид",
     show_grid: "Показать сетку",
@@ -101,8 +100,6 @@ const ru = {
     no_types: "Нет типов",
     no_types_text: "Создайте собственные пользовательские типы данных",
     no_issues: "Проблемы не обнаружены.",
-    strict_mode_is_on_no_issues:
-      "Строгий режим выключен, поэтому проблемы не будут отображаться.",
     name: "Имя",
     type: "Тип",
     null: "Null",

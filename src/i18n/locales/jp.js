@@ -45,7 +45,6 @@ const jp = {
     sidebar: "サイドバー",
     issues: "問題",
     presentation_mode: "プレゼンテーションモード",
-    strict_mode: "厳格モード",
     field_details: "フィールドの詳細",
     reset_view: "ビューをリセット",
     show_grid: "グリッドを表示",
@@ -106,8 +105,6 @@ const jp = {
     no_types: "タイプがありません",
     no_types_text: "カスタムデータタイプを作成",
     no_issues: "問題は検出されていません。",
-    strict_mode_is_on_no_issues:
-      "厳格モードがオフになっているため、問題は表示されません。",
     name: "名前",
     type: "タイプ",
     null: "Null",

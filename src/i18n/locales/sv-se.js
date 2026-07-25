@@ -45,7 +45,6 @@ const sv = {
     sidebar: "Sidopanel",
     issues: "Fel",
     presentation_mode: "Presentationsläge",
-    strict_mode: "Strikt läge",
     field_details: "Fältdetaljer",
     reset_view: "Återställ vy",
     show_grid: "Visa rutnät",
@@ -106,8 +105,6 @@ const sv = {
     no_types: "Inga typer",
     no_types_text: "Skapa dina egna anpassade datatyper",
     no_issues: "Inga fel upptäcktes.",
-    strict_mode_is_on_no_issues:
-      "Strikt läge är påslaget, så inga fel kommer att visas.",
     name: "Namn",
     type: "Typ",
     null: "Null",

@@ -37,7 +37,7 @@ export default function Issues() {
         header={
           <Badge
             type={issues.length > 0 ? "danger" : "primary"}
-            count={settings.strictMode ? null : issues.length}
+            count={settings.hideIssues ? null : issues.length}
             overflowCount={99}
             className="mt-1"
           >
@@ -50,8 +50,8 @@ export default function Issues() {
         itemKey="1"
       >
         <div className="max-h-[160px] overflow-y-auto">
-          {settings.strictMode ? (
-            <div className="mb-1">{t("strict_mode_is_on_no_issues")}</div>
+          {settings.hideIssues ? (
+            <div className="mb-1">{t("issues_hidden")}</div>
           ) : issues.length > 0 ? (
             <>
               {issues.map((e, i) => (

@@ -50,7 +50,6 @@ const tl = {
     sidebar: "Sidebar",
     issues: "Mga isyu",
     presentation_mode: "Mode ng Presentasyon",
-    strict_mode: "Strict Mode",
     field_details: "Detalye ng Field",
     reset_view: "I-reset ang Tanawin",
     show_grid: "Ipakita ang Grid",
@@ -115,8 +114,6 @@ const tl = {
     no_types: "Walang uri",
     no_types_text: "Gumawa ng iyong sariling custom data types",
     no_issues: "Walang isyu na natukoy.",
-    strict_mode_is_on_no_issues:
-      "Strict mode ay naka-off kaya walang isyu ang ipinapakita.",
     name: "Pangalan",
     type: "Type",
     null: "Null",

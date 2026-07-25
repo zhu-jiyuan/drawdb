@@ -50,7 +50,6 @@ const mn = {
     sidebar: "Хажуу самбар",
     issues: "Асуудлууд",
     presentation_mode: "Танилцуулах горим",
-    strict_mode: "Хатуу горим",
     field_details: "Талбарын дэлгэрэнгүй",
     reset_view: "Харагдацыг анхны болгох",
     show_grid: "Сүлжээ харах",
@@ -113,8 +112,6 @@ const mn = {
     no_types: "Төрөл алга",
     no_types_text: "Өөрийн өгөгдлийн төрлийг энд үүсгэнэ үү",
     no_issues: "Асуудал илрээгүй.",
-    strict_mode_is_on_no_issues:
-      "Хатуу горим идэвхтэй байна. Асуудал харагдахгүй.",
     name: "Нэр",
     type: "Төрөл",
     null: "NULL",

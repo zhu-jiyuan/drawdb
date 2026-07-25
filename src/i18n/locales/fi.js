@@ -50,7 +50,6 @@ const fi = {
     sidebar: "Sivupalkki",
     issues: "Ongelmat",
     presentation_mode: "Esitystila",
-    strict_mode: "Tiukka tila",
     field_details: "Kentän tiedot",
     reset_view: "Nollaa näkymä",
     show_grid: "Näytä ruudukko",
@@ -113,8 +112,6 @@ const fi = {
     no_types: "Ei tyyppejä",
     no_types_text: "Luo omia mukautettuja tietotyyppejä",
     no_issues: "Ongelmia ei havaittu.",
-    strict_mode_is_on_no_issues:
-      "Tiukka tila on pois päältä, joten ongelmia ei näytetä.",
     name: "Nimi",
     type: "Tyyppi",
     null: "Null",
