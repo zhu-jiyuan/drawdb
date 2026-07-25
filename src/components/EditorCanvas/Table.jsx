@@ -36,11 +36,13 @@ import {
   useTypes,
   useEnums,
   useTransform,
+  useFontsReady,
 } from "../../hooks";
 import TableInfo from "../EditorSidePanel/TablesTab/TableInfo";
 import { useTranslation } from "react-i18next";
 import { getCustomTypesForDb, resolveType } from "../../utils/customTypes";
 import { fieldUpdatesForTypeChange } from "../../utils/fieldTypeChange";
+import { getRequiredTableWidth } from "../../utils/tableWidth";
 import { dbToTypes } from "../../data/datatypes";
 import { isRtl } from "../../i18n/utils/rtl";
 import i18n from "../../i18n/i18n";
@@ -52,6 +54,15 @@ import {
   getVisibleFields,
   getRelationshipFields,
 } from "../../utils/utils";
+
+// Excalidraw-style cards: a colored stroke with a pastel wash of the same hue,
+// instead of a heavy solid header bar.
+function tint(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex || "");
+  if (!m) return `rgba(105, 101, 219, ${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
 
 export default function Table({
   tableData,
@@ -89,14 +100,19 @@ export default function Table({
     setBulkSelectedElements,
   } = useSelect();
 
-  const borderColor = useMemo(
-    () => (settings.mode === "light" ? "border-zinc-300" : "border-zinc-600"),
-    [settings.mode],
+  // Cards size themselves to their content: settings.tableWidth is the floor
+  // (raised by the resize handle), and a table grows past it rather than
+  // truncating a field name or type.
+  const fontsTick = useFontsReady();
+  const cardWidth = useMemo(
+    () => getRequiredTableWidth(tableData, database, settings),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tableData, database, settings, fontsTick],
   );
 
   const height = getTableHeight(
     tableData,
-    settings.tableWidth,
+    cardWidth,
     settings.showComments,
     relationships,
   );
@@ -197,7 +213,7 @@ export default function Table({
       id: nanoid(),
       name: `${tableData.name}_copy`,
       // Clear the original instead of overlapping it (cards are >=180px wide).
-      x: tableData.x + settings.tableWidth + 40,
+      x: tableData.x + cardWidth + 40,
       y: tableData.y,
       fields: tableData.fields.map((f) => ({ ...f, id: nanoid() })),
       indices: tableData.indices.map((idx) => ({ ...idx, id: nanoid() })),
@@ -366,20 +382,24 @@ export default function Table({
         key={tableData.id}
         x={tableData.x}
         y={tableData.y}
-        width={settings.tableWidth}
+        width={cardWidth}
         height={height}
         className="group drop-shadow-lg rounded-md cursor-move"
         onPointerDown={onPointerDown}
       >
         <div
           onDoubleClick={openEditor}
-          className={`relative border-2 hover:border-dashed hover:border-[#6965db]
-               select-none rounded-lg w-full ${
-                 settings.mode === "light"
-                   ? "bg-zinc-100 text-zinc-800"
-                   : "bg-zinc-800 text-zinc-200"
-               } ${isSelected ? "border-solid border-[#6965db]" : borderColor}`}
-          style={{ direction: "ltr" }}
+          className={`relative border-2 select-none rounded-lg w-full ${
+            settings.mode === "light" ? "text-zinc-800" : "text-zinc-200"
+          }`}
+          style={{
+            direction: "ltr",
+            borderColor: isSelected ? "#6965db" : tableData.color,
+            backgroundColor:
+              settings.mode === "light"
+                ? tint(tableData.color, 0.05)
+                : "rgb(39 39 42)",
+          }}
         >
           {!layout.readOnly && (
             <div
@@ -394,23 +414,29 @@ export default function Table({
             </div>
           )}
           <div
-            className="h-[10px] w-full rounded-t-md"
+            className="h-[6px] w-full rounded-t-md"
             style={{ backgroundColor: tableData.color }}
           />
           <div
-            className={`${
-              visibleFieldEntries.length === 0
-                ? "rounded-b-md"
-                : "border-b border-gray-400"
-            } ${
-              settings.mode === "light" ? "bg-zinc-100" : "bg-zinc-900"
-            } ${tableData.comment && settings.showComments ? "pb-3" : ""}`}
+            className={`${visibleFieldEntries.length === 0 ? "rounded-b-md" : ""} ${
+              tableData.comment && settings.showComments ? "pb-3" : ""
+            }`}
+            style={{
+              backgroundColor: tint(
+                tableData.color,
+                settings.mode === "light" ? 0.14 : 0.28,
+              ),
+              borderBottom:
+                visibleFieldEntries.length === 0
+                  ? "none"
+                  : `1px solid ${tint(tableData.color, 0.45)}`,
+            }}
           >
             <div
               className={`overflow-hidden font-bold h-[40px] flex justify-between items-center gap-2`}
             >
               <div
-                className="px-3 overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1"
+                className="px-3 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1"
                 onDoubleClick={(e) => {
                   if (layout.readOnly) return;
                   e.stopPropagation();
@@ -657,9 +683,13 @@ export default function Table({
     const showFieldComment = fieldData.comment && settings.showComments;
     return (
       <div
-        className={`${
-          index === visibleFields.length - 1 ? "" : "border-b border-gray-400"
-        } group w-full overflow-hidden`}
+        className="group w-full overflow-hidden"
+        style={{
+          borderBottom:
+            index === visibleFields.length - 1
+              ? "none"
+              : `1px solid ${tint(tableData.color, 0.25)}`,
+        }}
         onPointerEnter={(e) => {
           if (!e.isPrimary) return;
 
@@ -708,14 +738,14 @@ export default function Table({
                   getFieldOffsetY(
                     visibleFields,
                     index,
-                    settings.tableWidth,
+                    cardWidth,
                     settings.showComments,
                   ) +
                   tableHeaderHeight +
                   tableColorStripHeight +
                   getCommentHeight(
                     tableData.comment,
-                    settings.tableWidth,
+                    cardWidth,
                     settings.showComments,
                   ) +
                   14;
@@ -731,7 +761,7 @@ export default function Table({
               }}
             />
             <span
-              className="overflow-hidden text-ellipsis whitespace-nowrap"
+              className="whitespace-nowrap overflow-hidden text-ellipsis"
               title={fieldData.name}
               onDoubleClick={(e) => {
                 if (layout.readOnly) return;

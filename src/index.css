@@ -369,3 +369,9 @@ body[theme-mode="dark"] .editor-toolbar > div {
 .semi-switch-checked {
   background-color: var(--excal-violet) !important;
 }
+
+/* Type labels use Excalidraw's deeper palette; lift them on dark backgrounds
+   so they keep contrast without going neon in light mode. */
+body[theme-mode="dark"] foreignObject .font-mono {
+  filter: brightness(1.45) saturate(0.9);
+}

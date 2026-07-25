@@ -1,7 +1,14 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { Cardinality, ObjectType, Tab } from "../../data/constants";
 import { calcPath, calcCompositePath } from "../../utils/calcPath";
-import { useDiagram, useSettings, useLayout, useSelect } from "../../hooks";
+import { getRequiredTableWidth } from "../../utils/tableWidth";
+import {
+  useDiagram,
+  useSettings,
+  useLayout,
+  useSelect,
+  useFontsReady,
+} from "../../hooks";
 import { useTranslation } from "react-i18next";
 import { SideSheet } from "@douyinfe/semi-ui";
 import RelationshipInfo from "../EditorSidePanel/RelationshipsTab/RelationshipInfo";
@@ -15,10 +22,11 @@ const labelFontSize = 16;
 
 export default function Relationship({ data }) {
   const { settings } = useSettings();
-  const { tables, relationships } = useDiagram();
+  const { tables, relationships, database } = useDiagram();
   const { layout } = useLayout();
   const { selectedElement, setSelectedElement } = useSelect();
   const { t } = useTranslation();
+  const fontsTick = useFontsReady();
 
   const pathValues = useMemo(() => {
     const startTable = tables.find((t) => t.id === data.startTableId);
@@ -66,6 +74,27 @@ export default function Relationship({ data }) {
 
   const isComposite = (pathValues?.startFieldIndices?.length ?? 0) > 1;
 
+  // Endpoints can be different widths (cards size to their content), so the
+  // geometry needs each side's own width.
+  const endpointWidths = useMemo(() => {
+    if (!pathValues) return {};
+    const startTable = tables.find((t) => t.id === data.startTableId);
+    const endTable = tables.find((t) => t.id === data.endTableId);
+    return {
+      startWidth: getRequiredTableWidth(startTable, database, settings),
+      endWidth: getRequiredTableWidth(endTable, database, settings),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    pathValues,
+    tables,
+    data.startTableId,
+    data.endTableId,
+    database,
+    settings,
+    fontsTick,
+  ]);
+
   const composite = useMemo(() => {
     if (!pathValues || !isComposite) return null;
     return calcCompositePath(
@@ -78,8 +107,15 @@ export default function Relationship({ data }) {
       settings.tableWidth,
       1,
       settings.showComments,
+      endpointWidths,
     );
-  }, [pathValues, isComposite, settings.tableWidth, settings.showComments]);
+  }, [
+    pathValues,
+    isComposite,
+    settings.tableWidth,
+    settings.showComments,
+    endpointWidths,
+  ]);
 
   const pathRef = useRef();
   const labelRef = useRef();
@@ -187,6 +223,7 @@ export default function Relationship({ data }) {
                   settings.tableWidth,
                   1,
                   settings.showComments,
+                  endpointWidths,
                 )
           }
           fill="none"
@@ -204,6 +241,7 @@ export default function Relationship({ data }) {
                   settings.tableWidth,
                   1,
                   settings.showComments,
+                  endpointWidths,
                 )
           }
           className="relationship-path"

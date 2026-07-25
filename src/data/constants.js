@@ -4,18 +4,21 @@ export const noteWidth = 180;
 export const noteRadius = 3;
 export const noteFold = 24;
 export const darkBgTheme = "#16161A";
-export const stringColor = "text-orange-500";
-export const intColor = "text-yellow-500";
-export const decimalColor = "text-lime-500";
-export const booleanColor = "text-violet-500";
-export const binaryColor = "text-emerald-500";
-export const enumSetColor = "text-sky-500";
-export const documentColor = "text-indigo-500";
-export const networkIdColor = "text-rose-500";
-export const geometricColor = "text-fuchsia-500";
-export const vectorColor = "text-slate-500";
-export const otherColor = "text-zinc-500";
-export const dateColor = "text-cyan-500";
+// Excalidraw's palette — deeper and calmer than Tailwind's neon -500 ramp,
+// so type labels sit alongside the hand-drawn cards instead of shouting.
+// A dark-mode brightness lift lives in index.css.
+export const stringColor = "text-[#e8590c]";
+export const intColor = "text-[#1971c2]";
+export const decimalColor = "text-[#2f9e44]";
+export const booleanColor = "text-[#6741d9]";
+export const binaryColor = "text-[#087f5b]";
+export const enumSetColor = "text-[#1098ad]";
+export const documentColor = "text-[#5f3dc4]";
+export const networkIdColor = "text-[#e03131]";
+export const geometricColor = "text-[#ae3ec9]";
+export const vectorColor = "text-[#495057]";
+export const otherColor = "text-[#868e96]";
+export const dateColor = "text-[#0c8599]";
 export const tableHeaderHeight = 50;
 export const tableWidth = 240;
 export const gridSize = 24;

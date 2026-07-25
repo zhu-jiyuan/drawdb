@@ -60,7 +60,14 @@ function tableHeight(t) {
 // and within a column tables are ordered near their parents (barycenter) to
 // keep FK lines short and uncrossed. Height-aware, so tall tables never
 // overlap. Deterministic. Mutates x/y in place and returns the tables.
-export function layoutTables(tables, references, tableWidth = TABLE_WIDTH) {
+// widthOf: optional (table) => width, so the editor can space columns by each
+// card's real measured width (cards size themselves to their content).
+export function layoutTables(
+  tables,
+  references,
+  tableWidth = TABLE_WIDTH,
+  widthOf = null,
+) {
   const ids = new Set(tables.map((t) => t.id));
   const parentsOf = new Map(tables.map((t) => [t.id, new Set()]));
   for (const r of references || []) {
@@ -112,13 +119,16 @@ export function layoutTables(tables, references, tableWidth = TABLE_WIDTH) {
       (a, b) => barycenter(a) - barycenter(b) || a.name.localeCompare(b.name),
     );
     let y = MARGIN;
+    let widestInColumn = tableWidth;
     col.forEach((t, i) => {
       t.x = x;
       t.y = y;
       y += tableHeight(t) + ROW_GAP;
       rowIndex.set(t.id, i);
+      const w = widthOf ? widthOf(t) : tableWidth;
+      if (w > widestInColumn) widestInColumn = w;
     });
-    x += tableWidth + COL_GAP;
+    x += widestInColumn + COL_GAP;
   }
   return tables;
 }

@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { layoutTables } from "../../../mcp/shapes.js";
+import { getRequiredTableWidth } from "../../utils/tableWidth";
 import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import { createPortal } from "react-dom";
 import {
@@ -832,7 +833,12 @@ export default function ControlPanel({
   const autoArrange = () => {
     if (layout.readOnly) return;
     setTables(
-      layoutTables(structuredClone(tables), relationships, settings.tableWidth),
+      layoutTables(
+        structuredClone(tables),
+        relationships,
+        settings.tableWidth,
+        (t) => getRequiredTableWidth(t, database, settings),
+      ),
     );
     setSaveState(State.SAVING);
   };

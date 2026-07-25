@@ -10,27 +10,42 @@ import { getCommentHeight, getFieldOffsetY } from "./utils";
  *   startFieldIndex: number,
  *   endFieldIndex: number
  * }} r - Relationship data.
- * @param {number} tableWidth - Width of each table (used to calculate horizontal offsets).
+ * @param {number} tableWidth - Fallback width when a table has no measured
+ *   width (tables size themselves to their content, so the two endpoints of a
+ *   relationship can be different widths).
  * @param {number} zoom - Zoom level (used to scale vertical spacing).
+ * @param {boolean} showComments
+ * @param {{startWidth?: number, endWidth?: number}} [widths] - Per-endpoint widths.
  * @returns {string} SVG path "d" attribute string.
  */
-export function calcPath(r, tableWidth = 200, zoom = 1, showComments = true) {
+export function calcPath(
+  r,
+  tableWidth = 200,
+  zoom = 1,
+  showComments = true,
+  widths = {},
+) {
   if (!r) {
     return "";
   }
 
-  const width = tableWidth * zoom;
+  const startW = (widths.startWidth ?? tableWidth) * zoom;
+  const endW = (widths.endWidth ?? tableWidth) * zoom;
   let x1 = r.startTable.x;
   let y1 =
     r.startTable.y +
     getFieldOffsetY(
       r.startTable.fields ?? [],
       r.startFieldIndex,
-      tableWidth,
+      widths.startWidth ?? tableWidth,
       showComments,
     ) +
     tableHeaderHeight +
-    getCommentHeight(r.startTable.comment, tableWidth, showComments) +
+    getCommentHeight(
+      r.startTable.comment,
+      widths.startWidth ?? tableWidth,
+      showComments,
+    ) +
     tableFieldHeight / 2;
   let x2 = r.endTable.x;
   let y2 =
@@ -38,42 +53,46 @@ export function calcPath(r, tableWidth = 200, zoom = 1, showComments = true) {
     getFieldOffsetY(
       r.endTable.fields ?? [],
       r.endFieldIndex,
-      tableWidth,
+      widths.endWidth ?? tableWidth,
       showComments,
     ) +
-    getCommentHeight(r.endTable.comment, tableWidth, showComments) +
+    getCommentHeight(
+      r.endTable.comment,
+      widths.endWidth ?? tableWidth,
+      showComments,
+    ) +
     tableHeaderHeight +
     tableFieldHeight / 2;
 
   let radius = 10 * zoom;
-  const midX = (x2 + x1 + width) / 2;
-  const endX = x2 + width < x1 ? x2 + width : x2;
+  const midX = (x2 + x1 + startW) / 2;
+  const endX = x2 + endW < x1 ? x2 + endW : x2;
 
   if (Math.abs(y1 - y2) <= 36 * zoom) {
     radius = Math.abs(y2 - y1) / 3;
     if (radius <= 2) {
-      if (x1 + width <= x2) return `M ${x1 + width} ${y1} L ${x2} ${y2 + 0.1}`;
-      else if (x2 + width < x1)
-        return `M ${x1} ${y1} L ${x2 + width} ${y2 + 0.1}`;
+      if (x1 + startW <= x2) return `M ${x1 + startW} ${y1} L ${x2} ${y2 + 0.1}`;
+      else if (x2 + endW < x1)
+        return `M ${x1} ${y1} L ${x2 + endW} ${y2 + 0.1}`;
     }
   }
 
   if (y1 <= y2) {
-    if (x1 + width <= x2) {
-      return `M ${x1 + width} ${y1} L ${
+    if (x1 + startW <= x2) {
+      return `M ${x1 + startW} ${y1} L ${
         midX - radius
       } ${y1} A ${radius} ${radius} 0 0 1 ${midX} ${y1 + radius} L ${midX} ${
         y2 - radius
       } A ${radius} ${radius} 0 0 0 ${midX + radius} ${y2} L ${endX} ${y2}`;
-    } else if (x2 <= x1 + width && x1 <= x2) {
-      return `M ${x1 + width} ${y1} L ${
-        x2 + width
-      } ${y1} A ${radius} ${radius} 0 0 1 ${x2 + width + radius} ${
+    } else if (x2 <= x1 + startW && x1 <= x2) {
+      return `M ${x1 + startW} ${y1} L ${
+        x2 + endW
+      } ${y1} A ${radius} ${radius} 0 0 1 ${x2 + endW + radius} ${
         y1 + radius
-      } L ${x2 + width + radius} ${y2 - radius} A ${radius} ${radius} 0 0 1 ${
-        x2 + width
-      } ${y2} L ${x2 + width} ${y2}`;
-    } else if (x2 + width >= x1 && x2 + width <= x1 + width) {
+      } L ${x2 + endW + radius} ${y2 - radius} A ${radius} ${radius} 0 0 1 ${
+        x2 + endW
+      } ${y2} L ${x2 + endW} ${y2}`;
+    } else if (x2 + endW >= x1 && x2 + endW <= x1 + startW) {
       return `M ${x1} ${y1} L ${
         x2 - radius
       } ${y1} A ${radius} ${radius} 0 0 0 ${x2 - radius - radius} ${
@@ -89,13 +108,13 @@ export function calcPath(r, tableWidth = 200, zoom = 1, showComments = true) {
       } A ${radius} ${radius} 0 0 1 ${midX - radius} ${y2} L ${endX} ${y2}`;
     }
   } else {
-    if (x1 + width <= x2) {
-      return `M ${x1 + width} ${y1} L ${
+    if (x1 + startW <= x2) {
+      return `M ${x1 + startW} ${y1} L ${
         midX - radius
       } ${y1} A ${radius} ${radius} 0 0 0 ${midX} ${y1 - radius} L ${midX} ${
         y2 + radius
       } A ${radius} ${radius} 0 0 1 ${midX + radius} ${y2} L ${endX} ${y2}`;
-    } else if (x1 + width >= x2 && x1 + width <= x2 + width) {
+    } else if (x1 + startW >= x2 && x1 + startW <= x2 + endW) {
       return `M ${x1} ${y1} L ${
         x1 - radius - radius
       } ${y1} A ${radius} ${radius} 0 0 1 ${x1 - radius - radius - radius} ${
@@ -105,15 +124,15 @@ export function calcPath(r, tableWidth = 200, zoom = 1, showComments = true) {
       } A ${radius} ${radius} 0 0 1 ${
         x1 - radius - radius
       } ${y2} L ${endX} ${y2}`;
-    } else if (x1 >= x2 && x1 <= x2 + width) {
-      return `M ${x1 + width} ${y1} L ${
-        x1 + width + radius
-      } ${y1} A ${radius} ${radius} 0 0 0 ${x1 + width + radius + radius} ${
+    } else if (x1 >= x2 && x1 <= x2 + endW) {
+      return `M ${x1 + startW} ${y1} L ${
+        x1 + startW + radius
+      } ${y1} A ${radius} ${radius} 0 0 0 ${x1 + startW + radius + radius} ${
         y1 - radius
-      } L ${x1 + width + radius + radius} ${
+      } L ${x1 + startW + radius + radius} ${
         y2 + radius
-      } A ${radius} ${radius} 0 0 0 ${x1 + width + radius} ${y2} L ${
-        x2 + width
+      } A ${radius} ${radius} 0 0 0 ${x1 + startW + radius} ${y2} L ${
+        x2 + endW
       } ${y2}`;
     } else {
       return `M ${x1} ${y1} L ${
@@ -149,28 +168,34 @@ export function calcCompositePath(
   tableWidth = 200,
   zoom = 1,
   showComments = true,
+  widths = {},
 ) {
   if (!r || !r.startFieldIndices?.length || !r.endFieldIndices?.length) {
     return null;
   }
 
-  const width = tableWidth * zoom;
-  const anchorY = (table, index) =>
+  const startW = (widths.startWidth ?? tableWidth) * zoom;
+  const endW = (widths.endWidth ?? tableWidth) * zoom;
+  const anchorY = (table, index, w) =>
     table.y +
     tableHeaderHeight +
-    getCommentHeight(table.comment, tableWidth, showComments) +
-    getFieldOffsetY(table.fields ?? [], index, tableWidth, showComments) +
+    getCommentHeight(table.comment, w, showComments) +
+    getFieldOffsetY(table.fields ?? [], index, w, showComments) +
     tableFieldHeight / 2;
 
-  const startYs = r.startFieldIndices.map((i) => anchorY(r.startTable, i));
-  const endYs = r.endFieldIndices.map((i) => anchorY(r.endTable, i));
+  const startYs = r.startFieldIndices.map((i) =>
+    anchorY(r.startTable, i, widths.startWidth ?? tableWidth),
+  );
+  const endYs = r.endFieldIndices.map((i) =>
+    anchorY(r.endTable, i, widths.endWidth ?? tableWidth),
+  );
 
   // Connect each table on the edge facing the other table.
-  const startCenter = r.startTable.x + width / 2;
-  const endCenter = r.endTable.x + width / 2;
+  const startCenter = r.startTable.x + startW / 2;
+  const endCenter = r.endTable.x + endW / 2;
   const startIsLeft = startCenter <= endCenter;
-  const startX = startIsLeft ? r.startTable.x + width : r.startTable.x;
-  const endX = startIsLeft ? r.endTable.x : r.endTable.x + width;
+  const startX = startIsLeft ? r.startTable.x + startW : r.startTable.x;
+  const endX = startIsLeft ? r.endTable.x : r.endTable.x + endW;
   const dir = startIsLeft ? 1 : -1;
   const fork = 24 * zoom;
   const mergeStartX = startX + dir * fork;
