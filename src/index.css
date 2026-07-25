@@ -379,3 +379,114 @@ body[theme-mode="dark"] foreignObject .font-mono {
   stroke-dasharray: none;
   animation: none;
 }
+
+/* ---- P1: canvas typography (readability pass) ------------------------------
+   The handwriting face is identity, not data: it stays on table names, while
+   every identifier, type and default is set in a mono face so a schema reads
+   like a schema. Sizes come from the approved mockup and every pairing below
+   was measured at >=4.5:1 on its real background. */
+
+:root {
+  --canvas-ink: #17171c; /* primary text  */
+  --canvas-ink2: #494955; /* secondary     */
+  --canvas-ink3: #5f5f6c; /* labels        */
+  --canvas-hair: #e4dfd2; /* leader dots, faint rules */
+  --canvas-chip-bg: #efede3;
+  --pk-bg: #faeacf;
+  --pk-ink: #7a4700;
+  --fk-bg: #ddecf7;
+  --fk-ink: #13567e;
+  --uq-bg: #e9e4f8;
+  --uq-ink: #4f3799;
+  --t-type: 13.5px;
+  --t-data: 15px;
+  --t-card: 20px;
+}
+
+body[theme-mode="dark"] {
+  --canvas-ink: #f2f2f5;
+  --canvas-ink2: #c3c3cc;
+  --canvas-ink3: #a0a0ad;
+  --canvas-hair: #4a4a55;
+  --canvas-chip-bg: #33333b;
+  --pk-bg: #4a3410;
+  --pk-ink: #f5cf94;
+  --fk-bg: #123449;
+  --fk-ink: #a8d4ef;
+  --uq-bg: #322a52;
+  --uq-ink: #c9bcf2;
+}
+
+/* identifiers, types and defaults: mono, never the handwriting face */
+.sketch-mode foreignObject .field-name,
+.sketch-mode foreignObject .field-type,
+foreignObject .field-name,
+foreignObject .field-type {
+  font-family:
+    ui-monospace, "JetBrains Mono", "SFMono-Regular", "Cascadia Mono",
+    Menlo, Consolas, "Noto Sans Mono CJK SC", monospace !important;
+  letter-spacing: -0.012em;
+}
+
+.field-name {
+  font-size: var(--t-data);
+  line-height: 17px;
+  color: var(--canvas-ink);
+}
+
+.field-type {
+  font-size: var(--t-type);
+  line-height: 18px;
+  color: var(--canvas-ink2);
+  background: var(--canvas-chip-bg);
+  border-radius: 4px;
+  padding: 1px 6px;
+  letter-spacing: -0.015em;
+}
+
+/* key badges: a fixed-width column so PK/FK/UQ line up down the card */
+.key-badge {
+  flex: none;
+  width: 23px;
+  text-align: center;
+  font-family: ui-monospace, "JetBrains Mono", Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 14px;
+  border-radius: 3.5px;
+  color: transparent;
+}
+.key-badge.pk {
+  background: var(--pk-bg);
+  color: var(--pk-ink);
+}
+.key-badge.fk {
+  background: var(--fk-bg);
+  color: var(--fk-ink);
+}
+.key-badge.uq {
+  background: var(--uq-bg);
+  color: var(--uq-ink);
+}
+
+/* leader dots tie a field name to its right-aligned type */
+.field-leader {
+  flex: 1 1 auto;
+  min-width: 6px;
+  height: 1px;
+  background-image: linear-gradient(
+    90deg,
+    var(--canvas-hair) 0 2px,
+    transparent 2px 5px
+  );
+  background-size: 5px 1px;
+  position: relative;
+  top: 5px;
+}
+
+/* table name keeps the handwritten voice, one step larger for hierarchy */
+.table-title {
+  font-size: var(--t-card);
+  color: var(--canvas-ink);
+}

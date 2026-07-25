@@ -14,7 +14,6 @@ import {
   IconDeleteStroked,
   IconEditStroked,
   IconCopyStroked,
-  IconKeyStroked,
   IconLock,
   IconUnlock,
 } from "@douyinfe/semi-icons";
@@ -529,7 +528,7 @@ export default function Table({
             }
           >
             <div
-              className={`overflow-hidden font-bold text-[20px] h-[46px] flex justify-between items-center gap-2`}
+              className={`table-title overflow-hidden font-bold h-[46px] flex justify-between items-center gap-2`}
             >
               <div
                 className="px-3 whitespace-nowrap overflow-hidden text-ellipsis min-w-0 flex-1 cursor-text"
@@ -811,12 +810,8 @@ export default function Table({
           e.target.releasePointerCapture(e.pointerId);
         }}
       >
-        <div className="h-[40px] px-2 py-1 flex justify-between items-center gap-1">
-          <div
-            className={`${
-              hoveredField === index ? "text-zinc-400" : ""
-            } flex items-center gap-2 overflow-hidden`}
-          >
+        <div className="h-[40px] px-3 py-1 flex items-center gap-[6px]">
+          <div className="flex items-center gap-[6px] shrink-0">
             <button
               className="shrink-0 w-[10px] h-[10px] bg-[#6965dbcc] rounded-full"
               onPointerDown={(e) => {
@@ -850,8 +845,33 @@ export default function Table({
                 }));
               }}
             />
+            {/* PK / FK / UQ in a fixed column so keys line up down the card */}
             <span
-              className="whitespace-nowrap overflow-hidden text-ellipsis cursor-text"
+              className={`key-badge ${
+                fieldData.primary
+                  ? "pk"
+                  : getFieldReference(fieldData)
+                    ? "fk"
+                    : fieldData.unique
+                      ? "uq"
+                      : ""
+              }`}
+              aria-hidden={
+                !fieldData.primary &&
+                !fieldData.unique &&
+                !getFieldReference(fieldData)
+              }
+            >
+              {fieldData.primary
+                ? "PK"
+                : getFieldReference(fieldData)
+                  ? "FK"
+                  : fieldData.unique
+                    ? "UQ"
+                    : ""}
+            </span>
+            <span
+              className="field-name whitespace-nowrap overflow-hidden text-ellipsis cursor-text"
               title={fieldData.name}
               onClick={(e) => {
                 if (layout.readOnly) return;
@@ -873,8 +893,10 @@ export default function Table({
               )}
             </span>
           </div>
+          {/* dotted leader ties the name to its right-aligned type */}
+          <div className="field-leader" />
           <div
-            className="text-zinc-400 flex items-center gap-1 shrink-0"
+            className="flex items-center gap-1 shrink-0"
             onClick={(e) => {
               // Click the type to change it; blank row space stays free for
               // selecting and dragging the card.
@@ -912,22 +934,19 @@ export default function Table({
               <>
                 {settings.showDataTypes && (
                   <div className="flex gap-1 items-center">
-                    {fieldData.primary && <IconKeyStroked />}
                     {!fieldData.notNull && (
-                      <span className="text-[13px] text-zinc-500">?</span>
+                      <span
+                        className="text-[12px]"
+                        style={{ color: "var(--canvas-ink3)" }}
+                        title={t("nullable")}
+                      >
+                        ?
+                      </span>
                     )}
                     {/* Type as a chip: pale wash of its hue with deep ink, so
                         the secondary information stays readable without
                         competing with the field name. */}
-                    <span
-                      className="rounded-md px-2 py-[1px] text-[13px] whitespace-nowrap"
-                      style={{
-                        backgroundColor: tint(fieldResolved.color, 0.16),
-                        color:
-                          typeInk[String(fieldResolved.color).toLowerCase()] ??
-                          fieldResolved.color,
-                      }}
-                    >
+                    <span className="field-type whitespace-nowrap">
                       {fieldData.type +
                         ((fieldResolved.isSized || fieldResolved.hasPrecision) &&
                         fieldData.size &&

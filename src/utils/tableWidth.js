@@ -9,12 +9,13 @@ import { resolveType } from "./customTypes";
 //   <div class="h-[36px] px-2 ... flex justify-between items-center gap-1">
 //     <div class="flex items-center gap-2">[grip 10px] [name]</div>
 //     <div class="flex items-center gap-1 shrink-0">[key][?][type][delete]</div>
-const ROW_PADDING = 16; // px-2 on both sides
-const GRIP = 10 + 8; // grip dot + gap-2
+const ROW_PADDING = 24; // px-3 on both sides
+const GRIP = 10 + 6; // grip dot + gap
 const CLUSTER_GAP = 4; // gap-1 between the name and type clusters
-const KEY_ICON = 20; // primary-key glyph + its gap
+const KEY_BADGE = 23 + 6; // fixed PK/FK/UQ column + its gap
 const NULL_GLYPH = 12; // "?" nullable marker + its gap
-const CHIP_PADDING = 20; // the type chip's px-2 on both sides
+const CHIP_PADDING = 16; // the type chip's px-[6px] on both sides
+const LEADER_MIN = 24; // minimum visible run of leader dots
 const DELETE_BTN = 34; // revealed on hover — budget it so nothing shifts/overlaps
 const HEADER_ACTIONS = 104; // lock / collapse / more buttons revealed on hover
 const SAFETY = 6; // hinting/subpixel slack
@@ -22,9 +23,11 @@ const MAX_WIDTH = 640;
 
 // The canvas inherits the body font-size (16px); sketch mode swaps the family
 // via CSS (see index.css). Keep these in sync with Table.jsx.
-const FONT_SIZE = 16;
-const TITLE_SIZE = 20;
-const TYPE_SIZE = 13;
+const FONT_SIZE = 15; // field names (mono)
+const TITLE_SIZE = 20; // table name (handwriting)
+const TYPE_SIZE = 13.5; // type chip (mono)
+const MONO_STACK =
+  'ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace';
 const SKETCH_STACK =
   '"Excalifont", "Segoe Print", "Bradley Hand", "KaiTi", "STKaiti", "Kaiti SC", cursive';
 
@@ -80,15 +83,17 @@ export function getRequiredTableWidth(table, database, settings) {
     let right = DELETE_BTN;
     if (showTypes) {
       right +=
-        measure(typeLabel(database, field), "normal", family, TYPE_SIZE) +
+        measure(typeLabel(database, field), "normal", MONO_STACK, TYPE_SIZE) +
         CHIP_PADDING;
-      if (field.primary) right += KEY_ICON;
       if (!field.notNull) right += NULL_GLYPH;
     }
+    // Identifiers render in the mono stack now, so measure them that way.
     const row =
       ROW_PADDING +
       GRIP +
-      measure(field.name, "normal", family) +
+      KEY_BADGE +
+      measure(field.name, "normal", MONO_STACK, FONT_SIZE) +
+      LEADER_MIN +
       CLUSTER_GAP +
       right +
       SAFETY;
