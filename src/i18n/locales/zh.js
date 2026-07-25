@@ -7,6 +7,13 @@ const chinese = {
 const zh = {
   translation: {
     report_bug: "报告问题",
+    command_palette: "命令面板",
+    command_palette_placeholder: "搜索操作…",
+    search_actions: "搜索操作",
+    no_commands_found: "没有匹配的操作",
+    recently_used: "最近使用",
+    press_enter_to_confirm: "再按一次回车确认",
+    fit_window: "适应窗口",
     import_from: "导入",
     import: "导入",
     file: "文件",

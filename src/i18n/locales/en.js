@@ -7,6 +7,13 @@ const english = {
 const en = {
   translation: {
     report_bug: "Report a bug",
+    command_palette: "Command palette",
+    command_palette_placeholder: "Search actions…",
+    search_actions: "Search actions",
+    no_commands_found: "No matching action",
+    recently_used: "Recently used",
+    press_enter_to_confirm: "Press Enter to confirm",
+    fit_window: "Fit to window",
     import: "Import",
     inherits: "Inherits",
     merging_column_w_inherited_definition:

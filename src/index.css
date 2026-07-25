@@ -401,6 +401,12 @@ body[theme-mode="dark"] foreignObject .font-mono {
   --t-type: 13.5px;
   --t-data: 15px;
   --t-card: 20px;
+  --surface: #ffffff;
+  --surface-sunken: #f7f6f2;
+  --accent: #6965db;
+  --accent-wash: #6965db14;
+  --danger: #b32d2d;
+  --danger-wash: #b32d2d14;
 }
 
 body[theme-mode="dark"] {
@@ -415,6 +421,12 @@ body[theme-mode="dark"] {
   --fk-ink: #a8d4ef;
   --uq-bg: #322a52;
   --uq-ink: #c9bcf2;
+  --surface: #23232a;
+  --surface-sunken: #1c1c22;
+  --accent: #9b98f0;
+  --accent-wash: #9b98f01f;
+  --danger: #f08a8a;
+  --danger-wash: #f08a8a1f;
 }
 
 /* identifiers, types and defaults: mono, never the handwriting face */
@@ -489,4 +501,246 @@ foreignObject .field-type {
 .table-title {
   font-size: var(--t-card);
   color: var(--canvas-ink);
+}
+
+/* ── Command palette ────────────────────────────────────────────────────────
+   Replaces the menu bar as the way to reach every action. Deliberately crisp
+   rather than hand-drawn: it is chrome sitting over the drawing, and the one
+   place a user goes when they cannot find something, so legibility wins over
+   texture here. */
+
+.palette-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 14vh 16px 16px;
+  background: #1717203d;
+  backdrop-filter: blur(2px);
+  animation: palette-fade 120ms ease-out;
+}
+
+.palette {
+  width: 100%;
+  max-width: 580px;
+  max-height: 62vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--canvas-hair);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px #17172014,
+    0 12px 32px #17172029;
+  animation: palette-rise 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.palette-input {
+  flex: none;
+  width: 100%;
+  padding: 15px 18px;
+  border: none;
+  border-bottom: 1px solid var(--canvas-hair);
+  background: transparent;
+  color: var(--canvas-ink);
+  font-size: 16.5px;
+  line-height: 22px;
+  outline: none;
+}
+
+.palette-input::placeholder {
+  color: var(--canvas-ink3);
+}
+
+.palette-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 6px;
+  overscroll-behavior: contain;
+}
+
+.palette-group {
+  padding: 10px 10px 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--canvas-ink3);
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--canvas-ink);
+  font-size: 14.5px;
+}
+
+.palette-row.is-active {
+  background: var(--accent-wash);
+}
+
+.palette-row.is-confirming {
+  background: var(--danger-wash);
+}
+
+.palette-label {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.palette-text {
+  flex: 0 1 auto;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.palette-hit {
+  background: none;
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.palette-hint {
+  flex: 0 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 12.5px;
+  color: var(--canvas-ink3);
+}
+
+.palette-trailing {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--canvas-ink3);
+}
+
+.palette-key {
+  padding: 1px 6px;
+  border: 1px solid var(--canvas-hair);
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  color: var(--canvas-ink2);
+  font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo,
+    Consolas, monospace;
+  font-size: 11.5px;
+  line-height: 17px;
+}
+
+.palette-confirm {
+  flex: none;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.palette-empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--canvas-ink3);
+  font-size: 14px;
+}
+
+@keyframes palette-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes palette-rise {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .palette-scrim,
+  .palette {
+    animation: none;
+  }
+}
+
+/* Phones: the palette becomes the primary way to act, so give it the width. */
+@media (max-width: 520px) {
+  .palette-scrim {
+    padding: 8vh 10px 10px;
+  }
+  .palette {
+    max-height: 74vh;
+  }
+  .palette-input {
+    font-size: 16px; /* below 16px iOS Safari zooms the viewport on focus */
+  }
+}
+
+.palette-row.is-disabled {
+  color: var(--canvas-ink3);
+  opacity: 0.5;
+  cursor: default;
+}
+
+.palette-row.is-disabled .palette-hit {
+  color: inherit;
+}
+
+/* The palette's entry point, standing where the menu bar used to. Shaped like a
+   search field rather than a button so it reads as "type to find things" — with
+   the menu bar gone this is the only visible hint that the palette exists. */
+.palette-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 210px;
+  padding: 5px 8px 5px 11px;
+  margin-inline-end: 8px;
+  border: 1px solid var(--canvas-hair);
+  border-radius: 8px;
+  background: var(--surface-sunken);
+  color: var(--canvas-ink3);
+  font-size: 13.5px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.palette-trigger:hover {
+  border-color: var(--accent);
+  color: var(--canvas-ink2);
+}
+
+.palette-trigger:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.palette-trigger-label {
+  flex: 1 1 auto;
+  text-align: start;
+}
+
+/* Phones show the icon only — the label and keys would crowd the title out.
+   The icon alone would leave a 36x28 hit area, so hold the tap target at 40px. */
+@media (max-width: 700px) {
+  .palette-trigger {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 5px 9px;
+    justify-content: center;
+  }
+  .palette-trigger-label,
+  .palette-trigger .palette-key {
+    display: none;
+  }
 }

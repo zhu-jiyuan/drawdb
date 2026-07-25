@@ -6,9 +6,8 @@ import { Slot, useExtensions } from "../../context/ExtensionsContext";
 import { createPortal } from "react-dom";
 import {
   IconCaretdown,
-  IconChevronRight,
-  IconChevronLeft,
   IconSaveStroked,
+  IconSearch,
   IconUndo,
   IconRedo,
   IconEdit,
@@ -25,7 +24,6 @@ import {
   Spin,
   Tag,
   Toast,
-  Popconfirm,
   Typography,
 } from "@douyinfe/semi-ui";
 import { toPng, toJpeg, toSvg } from "html-to-image";
@@ -73,6 +71,8 @@ import { enterFullscreen, exitFullscreen } from "../../utils/fullscreen";
 import { dataURItoBlob } from "../../utils/utils";
 import { IconAddArea, IconAddNote, IconAddTable } from "../../icons";
 import LayoutDropdown from "./LayoutDropdown";
+import CommandPalette from "../CommandPalette";
+import { flattenMenu, IS_APPLE } from "../../utils/commandRegistry";
 import Sidesheet from "./SideSheet/Sidesheet";
 import Modal from "./Modal/Modal";
 import { useTranslation } from "react-i18next";
@@ -103,6 +103,7 @@ export default function ControlPanel({
 
   const [modal, setModal] = useState(MODAL.NONE);
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [showEditName, setShowEditName] = useState(false);
   const [importDb, setImportDb] = useState("");
   const [exportData, setExportData] = useState({
@@ -1742,6 +1743,31 @@ export default function ControlPanel({
     },
   };
 
+  // The palette replaces the menu bar, so it has to reach everything the menu
+  // reached — plus the handful of actions that only ever lived on the toolbar
+  // or a hotkey and were never in `menu` at all.
+  //
+  // Rebuilt every render rather than memoized: `menu` closes over roughly twenty
+  // pieces of state, and a dependency list that misses one would leave the
+  // palette showing a stale toggle or an action disabled after it became
+  // available. `menu` itself is already rebuilt each render, so walking its ~70
+  // entries adds nothing measurable.
+  const commands = [
+    ...flattenMenu(menu, t),
+    {
+      id: "view.fit_window",
+      group: t("view"),
+      label: t("fit_window"),
+      keywords: "zoom fit all center reset",
+      shortcut: "Ctrl+Alt+W",
+      run: fitWindow,
+    },
+  ];
+
+  useHotkeys("mod+k", (e) => { e.preventDefault(); setPaletteOpen(true); }, {
+    enableOnFormTags: true,
+    preventDefault: true,
+  });
   useHotkeys("mod+i", fileImport, { preventDefault: true });
   useHotkeys("mod+z", undo, { preventDefault: true });
   useHotkeys("mod+y", redo, { preventDefault: true });
@@ -1803,6 +1829,11 @@ export default function ControlPanel({
           toolbarContainer &&
           createPortal(toolbar(), toolbarContainer)}
       </div>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        commands={commands}
+      />
       <Modal
         modal={modal}
         exportData={exportData}
@@ -2061,134 +2092,18 @@ export default function ControlPanel({
               )}
             </div>
             <div className="flex items-center">
-              <div className="flex justify-start text-md select-none me-2">
-                {Object.keys(menu).map((category) => (
-                  <Dropdown
-                    key={category}
-                    position="bottomLeft"
-                    style={{
-                      width: "240px",
-                      direction: isRtl(i18n.language) ? "rtl" : "ltr",
-                    }}
-                    render={
-                      <Dropdown.Menu className="menu max-h-[calc(100vh-80px)] overflow-auto">
-                        {Object.keys(menu[category]).map((item, index) => {
-                          if (menu[category][item].children) {
-                            return (
-                              <Dropdown
-                                className="min-w-36 max-w-72"
-                                key={item}
-                                position="rightTop"
-                                render={
-                                  <Dropdown.Menu>
-                                    {menu[category][item].children.map(
-                                      (e, i) => {
-                                        if (e.divider) {
-                                          return (
-                                            <Dropdown.Divider
-                                              key={`divider-${i}`}
-                                            />
-                                          );
-                                        }
-                                        return (
-                                          <Dropdown.Item
-                                            key={i}
-                                            onClick={e.function}
-                                            className="flex w-full items-center justify-between gap-1"
-                                            disabled={e.disabled}
-                                          >
-                                            <span className="truncate flex-1 min-w-0">
-                                              {e.name}
-                                            </span>
-                                            {e.label && (
-                                              <Tag
-                                                size="small"
-                                                className="flex-shrink-0"
-                                              >
-                                                {e.label}
-                                              </Tag>
-                                            )}
-                                          </Dropdown.Item>
-                                        );
-                                      },
-                                    )}
-                                  </Dropdown.Menu>
-                                }
-                              >
-                                <Dropdown.Item
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                  }}
-                                  onClick={menu[category][item].function}
-                                >
-                                  {t(item)}
-
-                                  {isRtl(i18n.language) ? (
-                                    <IconChevronLeft />
-                                  ) : (
-                                    <IconChevronRight />
-                                  )}
-                                </Dropdown.Item>
-                              </Dropdown>
-                            );
-                          }
-                          if (
-                            menu[category][item].warning &&
-                            !menu[category][item].disabled
-                          ) {
-                            return (
-                              <Popconfirm
-                                key={index}
-                                title={menu[category][item].warning.title}
-                                content={menu[category][item].warning.message}
-                                onConfirm={menu[category][item].function}
-                                position="right"
-                                okText={t("confirm")}
-                                cancelText={t("cancel")}
-                              >
-                                <Dropdown.Item>{t(item)}</Dropdown.Item>
-                              </Popconfirm>
-                            );
-                          }
-                          return (
-                            <Dropdown.Item
-                              key={index}
-                              disabled={menu[category][item].disabled}
-                              onClick={menu[category][item].function}
-                              style={
-                                menu[category][item].shortcut && {
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }
-                              }
-                            >
-                              <div className="w-full flex items-center justify-between">
-                                <div>{t(item)}</div>
-                                <div className="flex items-center gap-1">
-                                  {menu[category][item].shortcut && (
-                                    <div className="text-gray-400">
-                                      {menu[category][item].shortcut}
-                                    </div>
-                                  )}
-                                  {menu[category][item].state &&
-                                    menu[category][item].state}
-                                </div>
-                              </div>
-                            </Dropdown.Item>
-                          );
-                        })}
-                      </Dropdown.Menu>
-                    }
-                  >
-                    <div className="px-3 py-1 hover-2 rounded-sm">
-                      {t(category)}
-                    </div>
-                  </Dropdown>
-                ))}
-              </div>
+              <button
+                className="palette-trigger"
+                onClick={() => setPaletteOpen(true)}
+                title={`${t("search_actions")}  ${IS_APPLE ? "\u2318" : "Ctrl"}+K`}
+              >
+                <IconSearch />
+                <span className="palette-trigger-label">
+                  {t("search_actions")}
+                </span>
+                <kbd className="palette-key">{IS_APPLE ? "\u2318" : "Ctrl"}</kbd>
+                <kbd className="palette-key">K</kbd>
+              </button>
               {layout.readOnly && <Tag size="small">{t("read_only")}</Tag>}
               {!layout.readOnly && (
                 <Tag
