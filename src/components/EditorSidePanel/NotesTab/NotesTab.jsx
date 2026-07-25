@@ -1,6 +1,7 @@
 import { Button, Collapse } from "@douyinfe/semi-ui";
 import { IconPlus } from "@douyinfe/semi-icons";
 import { useLayout, useNotes, useSelect } from "../../../hooks";
+import { ObjectType } from "../../../data/constants";
 import Empty from "../Empty";
 import SearchBar from "./SearchBar";
 import NoteInfo from "./NoteInfo";
@@ -15,14 +16,7 @@ export default function NotesTab() {
   return (
     <>
       <div className="flex gap-2">
-        <SearchBar
-          setActiveKey={(activeKey) =>
-            setSelectedElement((prev) => ({
-              ...prev,
-              id: parseInt(activeKey),
-            }))
-          }
-        />
+        <SearchBar />
         <div>
           <Button
             block
@@ -38,7 +32,12 @@ export default function NotesTab() {
         <Empty title={t("no_notes")} text={t("no_notes_text")} />
       ) : (
         <Collapse
-          activeKey={selectedElement.open ? `${selectedElement.id}` : ""}
+          activeKey={
+            selectedElement.open &&
+            selectedElement.element === ObjectType.NOTE
+              ? `${selectedElement.id}`
+              : ""
+          }
           keepDOM={false}
           lazyRender
           onChange={(activeKey) => {

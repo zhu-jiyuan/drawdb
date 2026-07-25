@@ -1,49 +1,26 @@
-import { useState } from "react";
-import { useSelect, useDiagram } from "../../../hooks";
-import { AutoComplete } from "@douyinfe/semi-ui";
-import { IconSearch } from "@douyinfe/semi-icons";
+import { useDiagram, useSelect } from "../../../hooks";
 import { ObjectType } from "../../../data/constants";
-import { useTranslation } from "react-i18next";
+import EntitySearchBar from "../EntitySearchBar";
+
+const labelOf = (relationship) => relationship.name;
 
 export default function SearchBar() {
   const { relationships } = useDiagram();
-  const [searchText, setSearchText] = useState("");
   const { setSelectedElement } = useSelect();
-  const { t } = useTranslation();
-
-  const [filteredResult, setFilteredResult] = useState(
-    relationships.map((t) => t.name),
-  );
-
-  const handleStringSearch = (value) => {
-    setFilteredResult(
-      relationships.map((t) => t.name).filter((i) => i.includes(value)),
-    );
-  };
 
   return (
-    <AutoComplete
-      data={filteredResult}
-      value={searchText}
-      showClear
-      prefix={<IconSearch />}
-      placeholder={t("search")}
-      emptyContent={<div className="p-3 popover-theme">{t("not_found")}</div>}
-      onSearch={(v) => handleStringSearch(v)}
-      onChange={(v) => setSearchText(v)}
-      onSelect={(v) => {
-        const { id } = relationships.find((t) => t.name === v);
+    <EntitySearchBar
+      items={relationships}
+      labelOf={labelOf}
+      scrollIdOf={(relationship) => `scroll_ref_${relationship.id}`}
+      onPick={(relationship) =>
         setSelectedElement((prev) => ({
           ...prev,
-          id: id,
+          id: relationship.id,
           open: true,
           element: ObjectType.RELATIONSHIP,
-        }));
-        document
-          .getElementById(`scroll_ref_${id}`)
-          .scrollIntoView({ behavior: "smooth" });
-      }}
-      className="w-full"
+        }))
+      }
     />
   );
 }

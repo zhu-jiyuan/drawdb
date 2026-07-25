@@ -1,42 +1,28 @@
-import { useState } from "react";
-import { AutoComplete } from "@douyinfe/semi-ui";
-import { IconSearch } from "@douyinfe/semi-icons";
-import { useNotes } from "../../../hooks";
-import { useTranslation } from "react-i18next";
+import { useNotes, useSelect } from "../../../hooks";
+import { ObjectType } from "../../../data/constants";
+import EntitySearchBar from "../EntitySearchBar";
 
-export default function SearchBar({ setActiveKey }) {
+const labelOf = (note) => note.title;
+
+export default function SearchBar() {
   const { notes } = useNotes();
-  const [searchText, setSearchText] = useState("");
-  const { t } = useTranslation();
-
-  const [filteredResult, setFilteredResult] = useState(
-    notes.map((t) => t.title),
-  );
-
-  const handleStringSearch = (value) => {
-    setFilteredResult(
-      notes.map((t) => t.title).filter((i) => i.includes(value)),
-    );
-  };
+  const { setSelectedElement } = useSelect();
 
   return (
-    <AutoComplete
-      data={filteredResult}
-      value={searchText}
-      showClear
-      prefix={<IconSearch />}
-      placeholder={t("search")}
-      emptyContent={<div className="p-3 popover-theme">{t("not_found")}</div>}
-      onSearch={(v) => handleStringSearch(v)}
-      onChange={(v) => setSearchText(v)}
-      onSelect={(v) => {
-        const { id } = notes.find((t) => t.title === v);
-        setActiveKey(`${id}`);
-        document
-          .getElementById(`scroll_note_${id}`)
-          .scrollIntoView({ behavior: "smooth" });
-      }}
-      className="w-full"
+    <EntitySearchBar
+      items={notes}
+      labelOf={labelOf}
+      scrollIdOf={(note) => `scroll_note_${note.id}`}
+      onPick={(note) =>
+        // `open` and `element` were both missing here, so picking a note
+        // scrolled to a panel it never expanded.
+        setSelectedElement((prev) => ({
+          ...prev,
+          id: note.id,
+          open: true,
+          element: ObjectType.NOTE,
+        }))
+      }
     />
   );
 }
