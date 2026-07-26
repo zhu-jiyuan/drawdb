@@ -60,7 +60,10 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
   const [resize, setResize] = useState(false);
   const [toolbarContainer, setToolbarContainer] = useState(null);
   const [width, setWidth] = useState(SIDEPANEL_MIN_WIDTH);
-  const [lastSaved, setLastSaved] = useState("");
+  // A Date, not a formatted string: the doc island renders it as a relative
+  // time ("Saved 2 minutes ago"), which needs the instant, and re-renders on a
+  // timer, which a pre-formatted string could never follow.
+  const [lastSaved, setLastSaved] = useState(null);
   const [showSelectDbModal, setShowSelectDbModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
   const [selectedDb, setSelectedDb] = useState("");
@@ -156,7 +159,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
           navigate(`/editor/diagrams/${targetId}`, { replace: true });
         }
         setSaveState(State.SAVED);
-        setLastSaved(new Date().toLocaleString());
+        setLastSaved(new Date());
       } catch (err) {
         console.warn("cloud autosave failed:", err);
         setSaveState(State.ERROR);
@@ -186,7 +189,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
         .then(() => {
           navigate(`/editor/diagrams/${diagramId}`, { replace: true });
           setSaveState(State.SAVED);
-          setLastSaved(new Date().toLocaleString());
+          setLastSaved(new Date());
         });
     } else {
       await db.diagrams
@@ -209,7 +212,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
         })
         .then(() => {
           setSaveState(State.SAVED);
-          setLastSaved(new Date().toLocaleString());
+          setLastSaved(new Date());
         });
     }
   }, [
@@ -251,7 +254,7 @@ export default function WorkSpace({ forcedDiagramId } = {}) {
         await cloudLoad(loadedDiagramId);
       }
       setSaveState(State.SAVED);
-      setLastSaved(new Date().toLocaleString());
+      setLastSaved(new Date());
     } catch (err) {
       console.warn("move to cloud failed:", err);
       setSaveState(State.ERROR);

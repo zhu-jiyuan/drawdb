@@ -1,7 +1,10 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { layoutTables } from "../../../shared/tableLayout";
-import { getRequiredTableWidth } from "../../utils/tableWidth";
+import {
+  buildTableWidths,
+  getRequiredTableWidth,
+} from "../../utils/tableWidth";
 import { useExtensions } from "../../context/ExtensionsContext";
 import { useMatch, useParams } from "react-router-dom";
 import { Toast, Typography } from "@douyinfe/semi-ui";
@@ -69,6 +72,10 @@ export default function ControlPanel({
   const [modal, setModal] = useState(MODAL.NONE);
   const [sidesheet, setSidesheet] = useState(SIDESHEET.NONE);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  // Re-render so "Saved 2 minutes ago" keeps up with the clock. Only the setter
+  // is used: the value is a bare re-render trigger, and getState() recomputes
+  // the label from `lastSaved` on every render anyway.
+  const [, tickRelativeTime] = useState(0);
   const [importDb, setImportDb] = useState("");
   const [exportData, setExportData] = useState({
     data: "",
@@ -575,19 +582,21 @@ export default function ControlPanel({
       maxY: -Infinity,
     };
 
+    // settings.tableWidth is the floor a card may not go below, not its width —
+    // cards grow to fit their own content. Measuring the bounding box against
+    // the floor makes the diagram look narrower than it is, so "fit window"
+    // fits the wrong box: a 446px-wide `orders` card was measured at 240 and
+    // ended up 78px off the right edge of a 390px screen after fitting.
+    const widths = buildTableWidths(tables, database, settings);
     tables.forEach((table) => {
+      const width = widths.get(table.id) ?? settings.tableWidth;
       minMaxXY.minX = Math.min(minMaxXY.minX, table.x);
       minMaxXY.minY = Math.min(minMaxXY.minY, table.y);
-      minMaxXY.maxX = Math.max(minMaxXY.maxX, table.x + settings.tableWidth);
+      minMaxXY.maxX = Math.max(minMaxXY.maxX, table.x + width);
       minMaxXY.maxY = Math.max(
         minMaxXY.maxY,
         table.y +
-          getTableHeight(
-            table,
-            settings.tableWidth,
-            settings.showComments,
-            relationships,
-          ),
+          getTableHeight(table, width, settings.showComments, relationships),
       );
     });
 
@@ -607,6 +616,21 @@ export default function ControlPanel({
       );
       minMaxXY.maxY = Math.max(minMaxXY.maxY, note.y + note.height);
     });
+
+    // Nothing on the canvas leaves the bounding box at its ±Infinity seed, and
+    // the arithmetic below then yields width/height = -Infinity, scale = -0 and
+    // centre = NaN. TransformContext defends against the NaN (pan falls back to
+    // the previous value) and clamps the zoom, so this never crashed — it just
+    // silently slammed an empty diagram from 100% to the 0.02 floor, measured
+    // in both engines. That is the state a brand-new diagram is in, and the
+    // control is the zoom readout itself, so the first thing a new user taps
+    // strands them at 2% needing ~21 zoom-in taps to get back.
+    // "Fit the content" has no meaning with no content: reset to the default
+    // view instead, which is where an empty canvas already sits.
+    if (!Number.isFinite(minMaxXY.minX) || !Number.isFinite(minMaxXY.minY)) {
+      setTransform((prev) => ({ ...prev, zoom: 1, pan: { x: 0, y: 0 } }));
+      return;
+    }
 
     const padding = 10;
     const width = minMaxXY.maxX - minMaxXY.minX + padding;
@@ -919,6 +943,16 @@ export default function ControlPanel({
     }
     wasFullscreen.current = fullscreen;
   }, [fullscreen, setLayout]);
+
+  // "Saved just now" has to become "Saved 2 minutes ago" without a save to
+  // trigger the re-render. 30s is well under the coarsest thing the label can
+  // say (luxon rounds to whole minutes), and the timer only runs while a saved
+  // timestamp is actually on screen.
+  useEffect(() => {
+    if (saveState !== State.SAVED || !lastSaved) return;
+    const id = setInterval(() => tickRelativeTime((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, [saveState, lastSaved]);
 
   const menu = {
     file: {
@@ -1631,6 +1665,13 @@ export default function ControlPanel({
           <DocIsland
             title={title}
             state={getState()}
+            stateTitle={
+              saveState === State.SAVED && savedAt()
+                ? `${t("last_saved")} ${savedAt()
+                    .setLocale(i18n.language)
+                    .toLocaleString(DateTime.DATETIME_MED_WITH_SECONDS)}`
+                : undefined
+            }
             saving={saveState === State.SAVING || saveState === State.LOADING}
             onRename={() => !layout.readOnly && setModal(MODAL.RENAME)}
             onMenu={() => setPaletteOpen(true)}
@@ -1685,7 +1726,7 @@ export default function ControlPanel({
       case State.LOADING:
         return t("loading");
       case State.SAVED:
-        return `${t("last_saved")} ${lastSaved}`;
+        return savedLabel();
       case State.SAVING:
         return t("saving");
       case State.ERROR:
@@ -1695,6 +1736,33 @@ export default function ControlPanel({
       default:
         return "";
     }
+  }
+
+  /**
+   * The doc island's state line gets ~156px on a 390px phone. The absolute
+   * stamp this used to print — "Last saved 7/26/2026, 12:13:49 PM" — measured
+   * 217px and was cut a quarter of the way in, to "…7/26/2026, 10:0…", which is
+   * both ugly and unreadable. A relative time fits, and answers the question
+   * you actually have ("is my work in?") rather than making you subtract dates.
+   * The exact instant is still there in the title attribute.
+   */
+  function savedLabel() {
+    const at = savedAt();
+    if (!at) return t("saved_just_now");
+    // Under a minute luxon says "0 minutes ago" / "in 0 seconds"; say it plainly.
+    if (Math.abs(at.diffNow("seconds").seconds) < 45) return t("saved_just_now");
+    return t("saved_relative", {
+      time: at.setLocale(i18n.language).toRelative(),
+    });
+  }
+
+  function savedAt() {
+    if (!lastSaved) return null;
+    const at =
+      lastSaved instanceof Date
+        ? DateTime.fromJSDate(lastSaved)
+        : DateTime.fromJSDate(new Date(lastSaved));
+    return at.isValid ? at : null;
   }
 
 }

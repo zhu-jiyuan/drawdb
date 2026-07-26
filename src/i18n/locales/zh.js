@@ -134,6 +134,10 @@ const zh = {
     no_changes: "没有更改",
     loading: "加载中...",
     last_saved: "上次保存",
+    // 时间以相对时间显示（"2分钟前保存"）——手机顶栏放不下完整时间戳。
+    // {{time}} 来自 luxon 的 toRelative()。
+    saved_just_now: "刚刚保存",
+    saved_relative: "{{time}}保存",
     saving: "保存中...",
     failed_to_save: "保存失败",
     fit_window_reset: "适应窗口/重置",

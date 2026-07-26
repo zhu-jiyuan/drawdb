@@ -39,6 +39,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useEventListener } from "usehooks-ts";
 import { areFieldsCompatible, getTableHeight } from "../../utils/utils";
+import { buildTableWidths } from "../../utils/tableWidth";
 import { getRectFromEndpoints, isInsideRect } from "../../utils/rect";
 import { State, noteWidth } from "../../data/constants";
 import { nanoid } from "nanoid";
@@ -567,11 +568,22 @@ function CanvasBody() {
       minY = Infinity,
       maxX = -Infinity,
       maxY = -Infinity;
+    // Cards size themselves to their content, so settings.tableWidth is only
+    // the floor — assuming every table is exactly that wide under-measures the
+    // diagram and "fitting" it leaves the widest cards hanging off the screen.
+    // A single `users` table measured 368px against the assumed 240: its right
+    // edge landed 53px past a 390px viewport, taking the type column with it.
+    // Same for the height: 200 was a guess, not a measurement.
+    const widths = buildTableWidths(tables, database, settings);
     tables.forEach((t) => {
+      const w = widths.get(t.id) ?? settings.tableWidth;
       minX = Math.min(minX, t.x);
       minY = Math.min(minY, t.y);
-      maxX = Math.max(maxX, t.x + settings.tableWidth);
-      maxY = Math.max(maxY, t.y + 200);
+      maxX = Math.max(maxX, t.x + w);
+      maxY = Math.max(
+        maxY,
+        t.y + getTableHeight(t, w, settings.showComments, relationships),
+      );
     });
     areas.forEach((a) => {
       minX = Math.min(minX, a.x);
@@ -595,7 +607,7 @@ function CanvasBody() {
       zoom,
       pan: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
     });
-  }, [tables, areas, settings.tableWidth, setTransform]);
+  }, [tables, areas, settings, database, relationships, setTransform]);
 
   const handlePointerDown = (e) => {
     if (!e.isPrimary) return;

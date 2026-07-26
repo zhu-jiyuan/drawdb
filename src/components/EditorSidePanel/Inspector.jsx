@@ -169,6 +169,28 @@ export default function Inspector() {
     updateField(table.id, field.id, values);
   };
 
+  // Free-text field editors. Typing updates the document so the canvas follows
+  // along, but the *commit* happens on blur and pushes one undo entry for the
+  // whole edit. Pushing that entry is not only about history: Workspace's
+  // autosave marks the diagram dirty from the undo stack, so a field edited
+  // without one is silently never saved.
+  const textField = (field, key) => ({
+    value: field[key] ?? "",
+    readOnly,
+    onChange: (e) => updateField(table.id, field.id, { [key]: e.target.value }),
+    onFocus: (e) => {
+      e.target.dataset.was = e.target.value;
+    },
+    onBlur: (e) => {
+      const was = e.target.dataset.was;
+      if (was === undefined || was === e.target.value) return;
+      // Restore, then commit through editField so undo/redo and the dirty flag
+      // both see a single before/after pair.
+      updateField(table.id, field.id, { [key]: was });
+      editField({ ...field, [key]: was }, { [key]: e.target.value });
+    },
+  });
+
   // The relationship, if any, in which this field is the referencing side.
   const foreignKeyOf = (field) =>
     relationships.find(
@@ -373,29 +395,14 @@ export default function Inspector() {
                       </div>
                       <div className="f">
                         <label>{t("size")}</label>
-                        <input
-                          value={field.size ?? ""}
-                          placeholder="—"
-                          readOnly={readOnly}
-                          onChange={(e) =>
-                            updateField(table.id, field.id, {
-                              size: e.target.value,
-                            })
-                          }
-                        />
+                        <input placeholder="—" {...textField(field, "size")} />
                       </div>
                     </div>
                     <div className="f">
                       <label>{t("default_value")}</label>
                       <input
-                        value={field.default ?? ""}
                         placeholder={t("not_set")}
-                        readOnly={readOnly}
-                        onChange={(e) =>
-                          updateField(table.id, field.id, {
-                            default: e.target.value,
-                          })
-                        }
+                        {...textField(field, "default")}
                       />
                     </div>
                     <div className="f">
@@ -422,15 +429,7 @@ export default function Inspector() {
                     </div>
                     <div className="f">
                       <label>{t("comment")}</label>
-                      <input
-                        value={field.comment ?? ""}
-                        readOnly={readOnly}
-                        onChange={(e) =>
-                          updateField(table.id, field.id, {
-                            comment: e.target.value,
-                          })
-                        }
-                      />
+                      <input {...textField(field, "comment")} />
                     </div>
 
                     {fk && (

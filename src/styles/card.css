@@ -8,6 +8,62 @@
    padding or gap below changes, change the constant there too or names start
    getting clipped. */
 
+/* ---- The foreignObject "no self-painting layers" invariant -------------------
+   WebKit (iOS Safari, and desktop WebKit too) drops the SVG viewBox transform —
+   translation AND scale — when it paints the subtree of a <foreignObject> that
+   contains a self-painting layer. The HTML then lands at raw user-space
+   coordinates while the roughjs outline drawn for the same card, an ordinary
+   sibling <path>, stays where it belongs. On a 390px phone that is the
+   difference between a table card and full-size table text strewn across the
+   screen with small empty boxes elsewhere — the user's bug report.
+
+   The bug is paint-only — getBoundingClientRect() and computed styles agree
+   with Chromium — so nothing short of comparing pixels catches it, and no
+   desktop browser reproduces it. Measured against the running app in Playwright
+   WebKit: `position: static` on every descendant is what restores the card, and
+   `position: relative` on so much as one wrapper brings the whole thing back.
+
+   Triggers seen: position (relative or absolute), will-change, transform,
+   backdrop-filter, isolation, contain: paint. `overflow: hidden` is safe.
+   So: no positioned descendants live inside the card. The one overlay that
+   needed to be positioned — the width-resize grip — is drawn in SVG instead
+   (see Table.jsx), where geometry follows the transform by construction.
+
+   This rule is the guard rail, because the failure is invisible on every
+   machine we develop on. Scoped by class rather than written as
+   `foreignObject *`: Thumbnail.jsx puts an absolutely-positioned area label
+   directly inside a foreignObject, and a blanket rule would break it.
+
+   Stops at the card's own wrappers on purpose. Reaching the whole subtree with
+   `.card-root *` would also flatten the Semi widgets the inline field editors
+   mount, whose internals we do not own. Those are transient and only appear at
+   editing zoom; the layout divs are what a future edit would reach for. */
+.card-root,
+.card-root > * {
+  position: static;
+}
+
+/* ---- Width-resize grip ------------------------------------------------------
+   Lives in SVG (see the invariant above), so its hover states are written here
+   rather than as Tailwind group-hover utilities on a div. */
+.table-width-grip {
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.grip-bar {
+  opacity: 0.3;
+}
+
+.group:hover .grip-bar {
+  opacity: 0.7;
+  /* thicken by growing left from the card edge, mirroring the old w-[3px] to
+     w-[4px] step — SVG has no box model to lean on, so it is a transform. */
+  transform: scaleX(1.34);
+  transform-origin: right;
+  transform-box: fill-box;
+}
+
 /* The alias is a gloss on the table name, not a second title: one small step
    down in size and two steps down in contrast, so `users 用户` reads as one
    thing. It keeps whichever face the card is drawn in (handwriting in sketch

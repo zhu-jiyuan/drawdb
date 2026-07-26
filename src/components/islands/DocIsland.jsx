@@ -11,6 +11,7 @@ import "../../styles/islands.css";
 export default function DocIsland({
   title,
   state,
+  stateTitle,
   saving,
   onRename,
   onMenu,
@@ -30,7 +31,10 @@ export default function DocIsland({
 
       <button className="isl-meta" onClick={onRename} title={t("rename")}>
         <div className="isl-name">{title}</div>
-        <div className="isl-state">
+        {/* The line reads as a relative time ("Saved 2 minutes ago") because
+            156px of phone will not hold a full timestamp; the exact instant
+            lives here, one hover away. */}
+        <div className="isl-state" title={stateTitle}>
           <span className={`isl-dot${saving ? " busy" : ""}`} />
           {state}
         </div>

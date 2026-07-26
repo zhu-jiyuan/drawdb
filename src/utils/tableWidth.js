@@ -22,7 +22,17 @@ const DELETE_BTN = 34; // revealed on hover — budget it so nothing shifts/over
 const HEADER_ACTIONS = 104; // lock / collapse / more buttons revealed on hover
 const ALIAS_GAP = 6; // gap between the table name and its alias
 const SAFETY = 6; // hinting/subpixel slack
-const MAX_WIDTH = 640;
+// There is deliberately no maximum. A card is drawn at exactly this width — the
+// foreignObject, the roughjs outline and the relationship anchors all take it —
+// so a wider card is a wider card, consistently, and nothing lands outside the
+// border. Capping it does not make the content fit; it hides it. A 640px cap
+// used to be applied here, and because <foreignObject> clips to its own bounds
+// (SVG's default overflow:hidden) a table whose widest row needed 800px painted
+// as `..._normalized_lowercase_for_d` cut off mid-word with its VARCHAR(255)
+// type gone from the card entirely — no ellipsis, no hint that anything was
+// missing. Screenshotted in both Chromium and WebKit before it was removed.
+// If very wide cards ever become a problem, the answer is to wrap or reflow the
+// row, not to clip it: names and types are never truncated.
 
 // The canvas inherits the body font-size (16px); sketch mode swaps the family
 // via CSS (see index.css). Keep these in sync with Table.jsx.
@@ -70,7 +80,8 @@ function typeLabel(database, field) {
 }
 
 /**
- * Width a table needs so nothing is clipped, clamped to [minWidth, MAX_WIDTH].
+ * Width a table needs so nothing is clipped. Never less than minWidth, and
+ * deliberately unbounded above (see the note on the constants).
  * Budgets for the controls that appear on hover so rows don't reflow or
  * collide when the pointer enters the card.
  */
@@ -114,7 +125,7 @@ export function getRequiredTableWidth(table, database, settings) {
     if (row > widest) widest = row;
   }
 
-  return Math.min(MAX_WIDTH, Math.max(min, Math.ceil(widest)));
+  return Math.max(min, Math.ceil(widest));
 }
 
 /**

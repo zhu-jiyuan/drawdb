@@ -1195,15 +1195,11 @@ select.sel {
 
 
 
-/* Phones: the header has to fit the title, the palette trigger and Share in
-   390px. "Last saved 7/25/2026, 7:23:20 PM" is the least load-bearing of the
-   four — the sync pill above the canvas already reports save state — so it goes
-   first, rather than letting Share run off the edge. */
-@media (max-width: 700px) {
-  .save-state-tag {
-    display: none;
-  }
-}
+/* (The old `.save-state-tag { display: none }` phone rule lived here. It hid an
+   over-long absolute save timestamp, but the header redesign replaced that
+   element with .isl-state and the rule was never carried across — it had been
+   matching nothing since. The timestamp is now rendered as a short relative
+   time instead, which fits, so there is nothing left to hide.) */
 
 /* Phones: the toolbar holds nine controls, ~600px of them, inside a container
    centred with a transform and capped at 96vw. The cap did not make it scroll —

@@ -142,6 +142,10 @@ const en = {
     no_changes: "No changes",
     loading: "Loading...",
     last_saved: "Last saved",
+    // The doc island shows the save time as a relative one — an absolute stamp
+    // does not fit a phone's header. `time` comes from luxon's toRelative().
+    saved_just_now: "Saved just now",
+    saved_relative: "Saved {{time}}",
     saving: "Saving...",
     failed_to_save: "Failed to save",
     fit_window_reset: "Fit window / Reset",

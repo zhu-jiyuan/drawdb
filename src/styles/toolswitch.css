@@ -88,12 +88,20 @@ body[theme-mode="dark"] .tsw-tool.is-active {
 /* Phones: the doc island owns the full width of the top edge, so the switch
    tucks in underneath it and tightens up to fit a 360px screen. */
 @media (max-width: 700px) {
-  /* Sits directly above the inspector sheet, as in the mobile design. At
-     top:64px it covered the sheet's own title — the one thing you need to see
-     to know what you are editing. */
+  /* Tucks under the doc island, which owns the top edge. It used to be anchored
+     to `bottom: calc(62vh + 12px)` so as to clear the inspector's title — but
+     that was written against the layout where the sheet came down from the TOP
+     of the screen. The sheet now rises from the bottom (see .inspector below),
+     so the switch cannot collide with it up here, and 62vh was never the
+     sheet's real height anyway: `max-height: 62vh` is a cap, so a short
+     selection left 80-odd px of dead air and no selection at all left the
+     switch marooned in the middle of the canvas — 5.6% of the viewport, opaque
+     and swallowing taps, measured sitting on top of a table card's title row.
+     If it ever has to dodge the sheet again, drive it from the sheet's measured
+     height, not from a guess. */
   .tool-switch {
-    top: auto;
-    bottom: calc(62vh + 12px);
+    top: 74px;
+    bottom: auto;
     gap: 1px;
     padding: 5px;
     max-width: calc(100vw - 20px);

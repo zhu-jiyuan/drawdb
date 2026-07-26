@@ -468,9 +468,12 @@ export default function Table({
         height={height}
         className={`${settings.sketchMode ? "" : "drop-shadow-lg"} rounded-md cursor-move`}
       >
+        {/* No positioned / composited descendants inside this card — see the
+            grip below and the invariant in styles/card.css. `.card-root` pins
+            it so a stray `relative` cannot creep back in. */}
         <div
           onDoubleClick={openEditor}
-          className={`relative select-none rounded-lg w-full ${
+          className={`card-root select-none rounded-lg w-full ${
             settings.sketchMode ? "border-0" : "border-2"
           } ${settings.mode === "light" ? "text-zinc-800" : "text-zinc-200"}`}
           style={{
@@ -483,18 +486,6 @@ export default function Table({
                 : "rgb(39 39 42)",
           }}
         >
-          {!layout.readOnly && (
-            <div
-              className="absolute top-0 right-0 z-10 h-full w-[14px] flex justify-end cursor-ew-resize touch-none"
-              title={t("table_width")}
-              onDoubleClick={(e) => e.stopPropagation()}
-              onPointerDown={startWidthResize}
-            >
-              {/* Always-visible thin violet bar so the resize affordance is
-                  discoverable (and touch has no hover); thickens on hover. */}
-              <div className="h-full w-[3px] bg-[#6965db]/30 group-hover:bg-[#6965db]/70 group-hover:w-[4px]" />
-            </div>
-          )}
           {!settings.sketchMode && (
             <div
               className="h-[6px] w-full rounded-t-md"
@@ -748,6 +739,56 @@ export default function Table({
           })}
         </div>
       </foreignObject>
+      {/* The width-resize grip, drawn in SVG rather than as an absolutely
+          positioned overlay inside the card.
+
+          WebKit (iOS Safari, and desktop WebKit too) paints the subtree of a
+          <foreignObject> at raw user-space coordinates — viewBox transform
+          dropped entirely, translation AND scale — as soon as anything inside
+          that foreignObject is a self-painting layer. One `position: absolute`
+          grip was enough: on a 390px phone at 42% zoom it put full-size card
+          text hundreds of pixels from the roughjs outline it belongs to,
+          spilling off the right of the screen, while the outline (an ordinary
+          sibling <path>) stayed put. Measured in Playwright WebKit against the
+          running app; `position: static` on every descendant is what restores
+          it, and one `relative` wrapper anywhere brings it straight back.
+
+          The bug is paint-only — getBoundingClientRect() and computed styles
+          agree with Chromium — so only a screenshot catches it and no desktop
+          browser reproduces it. Hence: keep the foreignObject subtree free of
+          position / transform / will-change / filter / isolation / contain, and
+          put overlays out here, where SVG geometry follows the transform by
+          construction. Painted after the foreignObject so it sits on top, which
+          is what the old `z-10` bought. */}
+      {!layout.readOnly && (
+        <g
+          className="table-width-grip"
+          onDoubleClick={(e) => e.stopPropagation()}
+          onPointerDown={startWidthResize}
+        >
+          {/* Always-visible thin violet bar so the resize affordance is
+              discoverable — touch has no hover. */}
+          <rect
+            className="grip-bar"
+            x={tableData.x + cardWidth - 3}
+            y={tableData.y}
+            width={3}
+            height={height}
+            fill="#6965db"
+          />
+          {/* Wider transparent hit target over it, as the div used to be. */}
+          <rect
+            className="grip-hit"
+            x={tableData.x + cardWidth - 14}
+            y={tableData.y}
+            width={14}
+            height={height}
+            fill="transparent"
+          >
+            <title>{t("table_width")}</title>
+          </rect>
+        </g>
+      )}
       </g>
     </>
   );
