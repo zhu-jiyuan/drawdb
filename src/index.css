@@ -520,60 +520,6 @@ foreignObject .field-type {
 }
 
 
-/* Phones: the same panel becomes a bottom sheet, as in the mobile design —
-   a 352px rail on a 390px screen is not a rail, it is the whole screen. */
-@media (max-width: 700px) {
-  .inspector {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    max-height: 62vh;
-    border-radius: 16px 16px 0 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    box-shadow: 0 -6px 24px rgba(20, 20, 40, 0.16);
-    animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  /* the grabber the design shows at the top of the sheet */
-  .inspector::before {
-    content: "";
-    position: absolute;
-    top: 7px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 46px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--insp-line);
-    z-index: 1;
-  }
-
-  .insp-scroll {
-    padding-top: 8px;
-  }
-
-  .ititle {
-    font-size: 22px;
-  }
-}
-
-@keyframes sheet-up {
-  from {
-    transform: translateY(14px);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .inspector {
-    animation: none;
-  }
-}
-
 /* ── Command palette ────────────────────────────────────────────────────────
    Replaces the menu bar as the way to reach every action. Deliberately crisp
    rather than hand-drawn: it is chrome sitting over the drawing, and the one
@@ -1191,6 +1137,61 @@ select.sel {
   background: var(--uq-bg);
   color: var(--uq-ink);
 }
+
+/* Phones: the same panel becomes a bottom sheet, as in the mobile design —
+   a 352px rail on a 390px screen is not a rail, it is the whole screen. */
+@media (max-width: 700px) {
+  .inspector {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 62vh;
+    border-radius: 16px 16px 0 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: 0 -6px 24px rgba(20, 20, 40, 0.16);
+    animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* the grabber the design shows at the top of the sheet */
+  .inspector::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 46px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--insp-line);
+    z-index: 1;
+  }
+
+  .insp-scroll {
+    padding-top: 8px;
+  }
+
+  .ititle {
+    font-size: 22px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inspector {
+    animation: none;
+  }
+}
+
 
 
 

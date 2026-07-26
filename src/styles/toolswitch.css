@@ -88,10 +88,15 @@ body[theme-mode="dark"] .tsw-tool.is-active {
 /* Phones: the doc island owns the full width of the top edge, so the switch
    tucks in underneath it and tightens up to fit a 360px screen. */
 @media (max-width: 700px) {
+  /* Sits directly above the inspector sheet, as in the mobile design. At
+     top:64px it covered the sheet's own title — the one thing you need to see
+     to know what you are editing. */
   .tool-switch {
-    top: 64px;
+    top: auto;
+    bottom: calc(62vh + 12px);
     gap: 1px;
     padding: 5px;
+    max-width: calc(100vw - 20px);
   }
 
   .tsw-tool {
