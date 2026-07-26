@@ -40,7 +40,12 @@ import { useTranslation } from "react-i18next";
 import { useEventListener } from "usehooks-ts";
 import { areFieldsCompatible, getTableHeight } from "../../utils/utils";
 import { buildTableWidths } from "../../utils/tableWidth";
-import { getRectFromEndpoints, isInsideRect } from "../../utils/rect";
+import {
+  contentVisibleInSafeRect,
+  getRectFromEndpoints,
+  isInsideRect,
+} from "../../utils/rect";
+import { useLayoutRegime } from "../../layout/regime";
 import { State, noteWidth } from "../../data/constants";
 import { nanoid } from "nanoid";
 
@@ -145,6 +150,17 @@ function CanvasBody() {
 
   const collectSelectedElements = () => {
     const rect = getRectFromEndpoints(bulkSelectRect);
+    // Cards are content-sized (getRequiredTableWidth), so the hit test has to
+    // use each table's own width — the same source of truth Table.jsx draws
+    // from and Relationship.jsx anchors to. settings.tableWidth is only the
+    // floor: against it a 703px card was selectable from its left 240px alone,
+    // and its height, whose comments wrap against the container width, came out
+    // 48px too tall, so a band that visibly enclosed the card failed to select.
+    // Built here rather than in a useMemo up top on purpose: this runs once per
+    // pointerup (handlePointerUp is the only caller), whereas `tables` gets a
+    // fresh identity on every drag frame, which would move the measureText
+    // workload — 21ms at 200 tables in WebKit — onto the drag path.
+    const widths = buildTableWidths(tables, database, settings);
     const elements = [];
     const shouldAddElement = (elementRect, element) => {
       // if ctrl key is pressed, only add the elements that are not already selected
@@ -166,13 +182,14 @@ function CanvasBody() {
         currentCoords: { x: table.x, y: table.y },
         initialCoords: { x: table.x, y: table.y },
       };
+      const width = widths.get(table.id) ?? settings.tableWidth;
       const tableRect = {
         x: table.x,
         y: table.y,
-        width: settings.tableWidth,
+        width,
         height: getTableHeight(
           table,
-          settings.tableWidth,
+          width,
           settings.showComments,
           relationships,
         ),
@@ -546,23 +563,30 @@ function CanvasBody() {
   /**
    * @param {PointerEvent} e
    */
-  // One-shot auto-fit on narrow viewports: a saved pan/zoom can strand tables
-  // off the right edge of a phone screen with no easy way back, so fit the
-  // content to the viewport once after the diagram loads. Desktop keeps its
-  // saved view untouched.
-  const autoFitted = useRef(false);
+  // Auto-fit: a saved pan/zoom can strand tables off the edge of the screen
+  // with no easy way back, so fit the content once per layout regime.
+  //
+  // The gate used to be `window.innerWidth >= 768`, which is half of bug A1:
+  // the CSS phone gate was `max-width: 700px`, so 701–767px got the desktop fit
+  // rule with the phone stylesheet, and an iPhone rotated to 844x390 got neither
+  // — no auto-fit at all, and all four cards sat off the right *and* the bottom
+  // edge at 100% zoom (maxCardRight 2591 against a 844px viewport). Two lessons
+  // are baked in below. First, the condition is now "is the content visible",
+  // not "how wide is the window" — a width test cannot answer the question it
+  // was standing in for. Second, it re-arms on regime change, so rotating into
+  // landscape refits; `resize` deliberately does not, because the iOS keyboard
+  // fires resize (it moves svh/dvh) and yanking the view mid-edit is worse than
+  // a stale one.
+  const regime = useLayoutRegime();
+  const fittedFor = useRef(null);
   useEffect(() => {
-    if (autoFitted.current) return;
     if (tables.length === 0) return;
-    if (window.innerWidth >= 768) {
-      autoFitted.current = true;
-      return;
-    }
+    if (fittedFor.current === regime) return; // one fit per regime; manual pan/zoom survives
     const el = document.getElementById("canvas");
     if (!el) return;
     const canvas = el.getBoundingClientRect();
     if (canvas.width === 0) return;
-    autoFitted.current = true;
+    if (!viewBox.width || !viewBox.height) return; // not measured yet
 
     let minX = Infinity,
       minY = Infinity,
@@ -591,6 +615,35 @@ function CanvasBody() {
       maxX = Math.max(maxX, a.x + a.width);
       maxY = Math.max(maxY, a.y + a.height);
     });
+    // Fit into the SAFE rect — the canvas minus the chrome insets the current
+    // regime declares in CSS — so "fitted" cannot mean "tucked under an island".
+    // Reading them from the custom properties keeps one source of truth: the
+    // stylesheet that positions the chrome is the thing that says how much room
+    // it takes.
+    const cs = getComputedStyle(document.documentElement);
+    const px = (name) => parseFloat(cs.getPropertyValue(name)) || 0;
+    const insets = {
+      top: px("--safe-top"),
+      right: px("--safe-right"),
+      bottom: px("--safe-bottom"),
+      left: px("--safe-left"),
+    };
+    const bbox = { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+
+    // Desktop keeps the saved view it was given — that view already works on a
+    // large screen, and refitting it every load would be a regression on its own.
+    // It only refits when the saved view shows the user nothing at all.
+    if (
+      regime === "desktop" &&
+      contentVisibleInSafeRect(bbox, viewBox, insets, transform.zoom)
+    ) {
+      fittedFor.current = regime;
+      return;
+    }
+    fittedFor.current = regime;
+
+    const availW = Math.max(120, canvas.width - insets.left - insets.right);
+    const availH = Math.max(120, canvas.height - insets.top - insets.bottom);
     const pad = 40;
     const contentW = maxX - minX + pad * 2;
     const contentH = maxY - minY + pad * 2;
@@ -598,16 +651,32 @@ function CanvasBody() {
     // unreadable speck helps nobody — pan reaches the rest). But when even
     // 45% can't show anything useful, honour the true fit ratio instead of
     // opening onto a blank canvas.
-    const fit = Math.min(1, canvas.width / contentW, canvas.height / contentH);
+    const fit = Math.min(1, availW / contentW, availH / contentH);
     const zoom = fit >= 0.45 ? fit : Math.max(fit, 0.25);
     // transform.pan is the diagram point shown at the viewport CENTER
-    // (viewBox.left = pan.x - viewBoxSize/2), so center on the content's
-    // bounding-box center — not its top-left corner.
+    // (viewBox.left = pan.x - viewBoxSize/2), so centre on the content's
+    // bounding-box centre — but the box we just fitted into is the SAFE rect,
+    // whose centre is offset from the viewport's by (left-right)/2, (top-bottom)/2
+    // screen px. Without that correction the content is centred on the viewport
+    // and slides back under the chrome we just made room for.
     setTransform({
       zoom,
-      pan: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+      pan: {
+        x: (minX + maxX) / 2 - (insets.left - insets.right) / 2 / zoom,
+        y: (minY + maxY) / 2 - (insets.top - insets.bottom) / 2 / zoom,
+      },
     });
-  }, [tables, areas, settings, database, relationships, setTransform]);
+  }, [
+    regime,
+    tables,
+    areas,
+    settings,
+    database,
+    relationships,
+    setTransform,
+    viewBox,
+    transform.zoom,
+  ]);
 
   const handlePointerDown = (e) => {
     if (!e.isPrimary) return;

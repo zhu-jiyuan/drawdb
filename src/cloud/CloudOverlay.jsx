@@ -27,7 +27,7 @@ export default function CloudOverlay() {
 
   if (auth.status === "anon") {
     return (
-      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 md:bottom-24">
+      <div className="cloud-status pointer-events-auto">
         <Button
           size="small"
           icon={<i className="bi bi-cloud me-1" />}
@@ -132,7 +132,15 @@ function CloudControls() {
 
   return (
     <>
-      <div className="pointer-events-auto absolute bottom-3 left-3 z-20 md:bottom-24">
+      {/* Positioned from the shared layout tokens (see .cloud-status in
+          styles/islands.css) like every other floating box. It used to be
+          `absolute bottom-3 left-3 md:bottom-24`, which had two faults: `md:` was
+          a fifth, undeclared breakpoint literal, and `absolute` measured from an
+          offsetParent that overflows the viewport, so the desktop nudge resolved
+          84px lower than intended and the pill sat on top of the zoom island —
+          2340px² at 844x390, blocking Zoom out and Reset view, and 1892px² even
+          at 1440x900. */}
+      <div className="cloud-status pointer-events-auto">
         <Dropdown
           position="topLeft"
           render={

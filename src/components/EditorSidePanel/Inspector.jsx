@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Action, ObjectType, Cardinality, Constraint } from "../../data/constants";
 import {
@@ -18,6 +18,7 @@ import { appendField } from "../../utils/tableFields";
 import AreaInfo from "./AreasTab/AreaDetails";
 import NoteInfo from "./NotesTab/NoteInfo";
 import RelationshipInfo from "./RelationshipsTab/RelationshipInfo";
+import { LAYOUT, useLayoutRegime } from "../../layout/regime";
 
 // Table colours offered in the inspector, from the approved design.
 const SWATCHES = [
@@ -34,6 +35,57 @@ const CARDINALITY_LABELS = {
   [Cardinality.ONE_TO_MANY]: "one_to_many",
   [Cardinality.MANY_TO_ONE]: "many_to_one",
 };
+
+/**
+ * Publishes the bottom sheet's *measured* height as --sheet-h on <html>, and
+ * returns the ref callback to hang on the sheet element.
+ *
+ * This is what keeps the zoom island tappable on a phone (bug A2): the island's
+ * `bottom` is max(--m-bottom, --sheet-h + --isl-gap), so it rides above the
+ * sheet instead of under it. The sheet keeps `max-height`, not `height`, so it
+ * is content-sized with no dead air — which is precisely why a CSS-only
+ * `calc(62vh + 12px)` could never work, and why this has to be a measurement.
+ *
+ * useLayoutEffect, not useEffect: the write has to land before the browser
+ * paints the frame the sheet first appears in, or the island is buried for that
+ * frame. The token's initial CSS value is --sheet-cap — the provable upper bound
+ * — as a second line of defence.
+ *
+ * Element identity is held in state rather than a ref so the observer is rebuilt
+ * when the panel swaps between its table and non-table markup, and torn down
+ * when nothing is selected at all. Outside the sheet regime, and whenever no
+ * sheet is mounted, the token is pinned to 0px: the rail and desktop layouts
+ * park the zoom island at --m-bottom and are proven disjoint from the rail
+ * without it.
+ */
+function useSheetHeightVar() {
+  const regime = useLayoutRegime();
+  const [el, setEl] = useState(null);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (regime !== LAYOUT.SHEET || !el) {
+      root.style.setProperty("--sheet-h", "0px");
+      return;
+    }
+    const write = () =>
+      root.style.setProperty(
+        "--sheet-h",
+        `${el.getBoundingClientRect().height}px`,
+      );
+    write();
+    // The sheet animates on `transform`, so its contentRect is final from frame
+    // 0 and the island's 180ms `bottom` transition tracks it rather than lagging.
+    const ro = new ResizeObserver(write);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty("--sheet-h", "0px");
+    };
+  }, [regime, el]);
+
+  return setEl;
+}
 
 /** Properties of whatever is selected, as a panel on the right of the canvas. */
 export default function Inspector() {
@@ -54,6 +106,7 @@ export default function Inspector() {
   const { setUndoStack, setRedoStack } = useUndoRedo();
   const { layout } = useLayout();
   const [openField, setOpenField] = useState(null);
+  const sheetRef = useSheetHeightVar();
 
   const { element, id } = selectedElement;
   const table =
@@ -107,7 +160,7 @@ export default function Inspector() {
     }
     if (!body) return null;
     return (
-      <aside className="inspector" aria-label={kind}>
+      <aside className="inspector" ref={sheetRef} aria-label={kind}>
         <div className="insp-scroll">
           <header className="ihead">
             <div className="ieyebrow">
@@ -203,7 +256,7 @@ export default function Inspector() {
   ).length;
 
   return (
-    <aside className="inspector" aria-label={t("table")}>
+    <aside className="inspector" ref={sheetRef} aria-label={t("table")}>
       <div className="insp-scroll">
         <header className="ihead">
           <div className="ihead-top">

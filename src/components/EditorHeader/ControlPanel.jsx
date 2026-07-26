@@ -9,7 +9,7 @@ import { useExtensions } from "../../context/ExtensionsContext";
 import { useMatch, useParams } from "react-router-dom";
 import { Toast, Typography } from "@douyinfe/semi-ui";
 import { toPng, toJpeg, toSvg } from "html-to-image";
-import { ObjectType, Action, Tab, State, MODAL, SIDESHEET, DB, IMPORT_FROM, noteWidth, pngExportPixelRatio } from "../../data/constants";
+import { Action, ObjectType, Tab, State, MODAL, SIDESHEET, DB, IMPORT_FROM, noteWidth, pngExportPixelRatio } from "../../data/constants";
 import jsPDF from "jspdf";
 import { useHotkeys } from "react-hotkeys-hook";
 import { Validator } from "jsonschema";
@@ -17,6 +17,7 @@ import { areaSchema, noteSchema, tableSchema } from "../../data/schemas";
 import { db } from "../../data/db";
 import { useLayout, useSettings, useTransform, useDiagram, useUndoRedo, useSelect, useSaveState, useTypes, useNotes, useAreas, useEnums, useFullscreen, useNavigateWithParams } from "../../hooks";
 import { enterFullscreen, exitFullscreen } from "../../utils/fullscreen";
+import { applyHistoryEntry } from "../../utils/history";
 import { dataURItoBlob } from "../../utils/utils";
 import DocIsland from "../islands/DocIsland";
 import ZoomIsland from "../islands/ZoomIsland";
@@ -136,405 +137,63 @@ export default function ControlPanel({
   const navigate = useNavigateWithParams();
   const extensions = useExtensions();
 
+  // The context surface undo/redo operate on. `tables`/`areas`/`notes`/`types`
+  // are render-time snapshots, which is what the history reducers expect: a write
+  // made while applying an entry is not visible to a later read in the same pass.
+  const historyApi = () => ({
+    tables,
+    areas,
+    notes,
+    types,
+    addTable,
+    updateTable,
+    deleteTable,
+    updateField,
+    deleteField,
+    setRelationships,
+    addRelationship,
+    deleteRelationship,
+    updateRelationship,
+    addArea,
+    updateArea,
+    deleteArea,
+    addNote,
+    updateNote,
+    deleteNote,
+    addType,
+    updateType,
+    deleteType,
+    setTypes,
+    addEnum,
+    updateEnum,
+    deleteEnum,
+    setUndoStack,
+    setRedoStack,
+  });
+
+  // Both directions are the same walk over the entry; see utils/history.js.
+  // The readOnly guard lives here rather than only on the menu entry: the menu
+  // item and the toolbar button are disabled when readOnly, but `useHotkeys`
+  // calls straight through, so Ctrl+Z used to mutate a document the editor was
+  // only displaying (a version preview sets layout.readOnly — Versions.jsx).
+  // Workspace's save effect is readOnly-gated, so that mutation was never
+  // persisted: the on-screen diagram silently stopped matching the server.
+  // Every other mutating handler here (del, duplicate, paste, cut, autoArrange)
+  // already guards the same way.
   const undo = () => {
+    if (layout.readOnly) return;
     if (undoStack.length === 0) return;
-    const a = undoStack[undoStack.length - 1];
+    const entry = undoStack[undoStack.length - 1];
     setUndoStack((prev) => prev.filter((_, i) => i !== prev.length - 1));
-
-    if (a.bulk) {
-      for (const element of a.elements) {
-        if (element.type === ObjectType.TABLE) {
-          updateTable(element.id, element.undo);
-        } else if (element.type === ObjectType.AREA) {
-          updateArea(element.id, element.undo);
-        } else if (element.type === ObjectType.NOTE) {
-          updateNote(element.id, element.undo);
-        }
-      }
-      setRedoStack((prev) => [...prev, a]);
-      return;
-    }
-
-    if (a.action === Action.ADD) {
-      if (a.element === ObjectType.TABLE) {
-        deleteTable(a.data.table.id, false);
-      } else if (a.element === ObjectType.AREA) {
-        deleteArea(areas[areas.length - 1].id, false);
-      } else if (a.element === ObjectType.NOTE) {
-        deleteNote(notes[notes.length - 1].id, false);
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        deleteRelationship(a.data.relationship.id, false);
-      } else if (a.element === ObjectType.TYPE) {
-        deleteType(a.data.type.id, false);
-      } else if (a.element === ObjectType.ENUM) {
-        deleteEnum(a.data.enum.id, false);
-      }
-      setRedoStack((prev) => [...prev, a]);
-    } else if (a.action === Action.MOVE) {
-      if (a.element === ObjectType.TABLE) {
-        const { x, y } = tables.find((t) => t.id === a.id);
-        setRedoStack((prev) => [...prev, { ...a, x, y }]);
-        updateTable(a.id, { x: a.x, y: a.y });
-      } else if (a.element === ObjectType.AREA) {
-        setRedoStack((prev) => [
-          ...prev,
-          { ...a, x: areas[a.id].x, y: areas[a.id].y },
-        ]);
-        updateArea(a.id, { x: a.x, y: a.y });
-      } else if (a.element === ObjectType.NOTE) {
-        setRedoStack((prev) => [
-          ...prev,
-          { ...a, x: notes[a.id].x, y: notes[a.id].y },
-        ]);
-        updateNote(a.id, { x: a.x, y: a.y });
-      }
-    } else if (a.action === Action.DELETE) {
-      if (a.element === ObjectType.TABLE) {
-        a.data.relationship.forEach((x) => addRelationship(x, false));
-        addTable(a.data, false);
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        addRelationship(a.data, false);
-      } else if (a.element === ObjectType.NOTE) {
-        addNote(a.data, false);
-      } else if (a.element === ObjectType.AREA) {
-        addArea(a.data, false);
-      } else if (a.element === ObjectType.TYPE) {
-        addType(a.data, false);
-      } else if (a.element === ObjectType.ENUM) {
-        addEnum(a.data, false);
-      }
-      setRedoStack((prev) => [...prev, a]);
-    } else if (a.action === Action.EDIT) {
-      if (a.element === ObjectType.AREA) {
-        updateArea(a.aid, a.undo);
-      } else if (a.element === ObjectType.NOTE) {
-        updateNote(a.nid, a.undo);
-      } else if (a.element === ObjectType.TABLE) {
-        const table = tables.find((t) => t.id === a.tid);
-        if (a.component === "field") {
-          updateField(a.tid, a.fid, a.undo);
-        } else if (a.component === "field_delete") {
-          setRelationships((prev) => {
-            let temp = [...prev];
-            a.data.relationship.forEach((r) => {
-              temp.splice(r.id, 0, r);
-            });
-            return temp;
-          });
-          const updatedFields = table.fields.slice();
-          updatedFields.splice(a.data.index, 0, a.data.field);
-          updateTable(a.tid, { fields: updatedFields });
-        } else if (a.component === "field_add") {
-          updateTable(a.tid, {
-            fields: table.fields.filter((e) => e.id !== a.fid),
-          });
-        } else if (a.component === "index_add") {
-          updateTable(a.tid, {
-            indices: table.indices
-              .filter((e) => e.id !== table.indices.length - 1)
-              .map((t, i) => ({ ...t, id: i })),
-          });
-        } else if (a.component === "index") {
-          updateTable(a.tid, {
-            indices: table.indices.map((index) =>
-              index.id === a.iid
-                ? {
-                    ...index,
-                    ...a.undo,
-                  }
-                : index,
-            ),
-          });
-        } else if (a.component === "index_delete") {
-          const updatedIndices = table.indices.slice();
-          updatedIndices.splice(a.data.id, 0, a.data);
-          updateTable(a.tid, {
-            indices: updatedIndices.map((t, i) => ({ ...t, id: i })),
-          });
-        } else if (a.component === "unique_constraint_add") {
-          const constraints = table.uniqueConstraints || [];
-          updateTable(a.tid, {
-            uniqueConstraints: constraints
-              .filter((e) => e.id !== constraints.length - 1)
-              .map((t, i) => ({ ...t, id: i })),
-          });
-        } else if (a.component === "unique_constraint") {
-          updateTable(a.tid, {
-            uniqueConstraints: (table.uniqueConstraints || []).map(
-              (constraint) =>
-                constraint.id === a.cid
-                  ? {
-                      ...constraint,
-                      ...a.undo,
-                    }
-                  : constraint,
-            ),
-          });
-        } else if (a.component === "unique_constraint_delete") {
-          const updatedConstraints = (table.uniqueConstraints || []).slice();
-          updatedConstraints.splice(a.data.id, 0, a.data);
-          updateTable(a.tid, {
-            uniqueConstraints: updatedConstraints.map((t, i) => ({
-              ...t,
-              id: i,
-            })),
-          });
-        } else if (a.component === "self") {
-          updateTable(a.tid, a.undo);
-        }
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        updateRelationship(a.rid, a.undo);
-      } else if (a.element === ObjectType.TYPE) {
-        if (a.component === "field_add") {
-          const type = types.find((t, i) =>
-            typeof a.tid === "number" ? i === a.tid : t.id === a.tid,
-          );
-          updateType(a.tid, {
-            fields: type.fields.filter((f, i) =>
-              f.id ? f.id !== a.data.field.id : i !== type.fields.length - 1,
-            ),
-          });
-        }
-        if (a.component === "field") {
-          updateType(a.tid, {
-            fields: types[a.tid].fields.map((e, i) =>
-              i === a.fid ? { ...e, ...a.undo } : e,
-            ),
-          });
-        } else if (a.component === "field_delete") {
-          setTypes((prev) =>
-            prev.map((t, i) => {
-              if (i === a.tid) {
-                const temp = t.fields.slice();
-                temp.splice(a.fid, 0, a.data);
-                return { ...t, fields: temp };
-              }
-              return t;
-            }),
-          );
-        } else if (a.component === "self") {
-          updateType(a.tid, a.undo);
-          if (a.updatedFields) {
-            if (a.undo.name) {
-              a.updatedFields.forEach((x) =>
-                updateField(x.tid, x.fid, { type: a.undo.name.toUpperCase() }),
-              );
-            }
-          }
-        }
-      } else if (a.element === ObjectType.ENUM) {
-        updateEnum(a.id, a.undo);
-        if (a.updatedFields) {
-          if (a.undo.name) {
-            a.updatedFields.forEach((x) =>
-              updateField(x.tid, x.fid, { type: a.undo.name.toUpperCase() }),
-            );
-          }
-        }
-      }
-      setRedoStack((prev) => [...prev, a]);
-    }
+    applyHistoryEntry(entry, "undo", historyApi());
   };
 
   const redo = () => {
+    if (layout.readOnly) return;
     if (redoStack.length === 0) return;
-    const a = redoStack[redoStack.length - 1];
-    setRedoStack((prev) => prev.filter((e, i) => i !== prev.length - 1));
-
-    if (a.bulk) {
-      for (const element of a.elements) {
-        if (element.type === ObjectType.TABLE) {
-          updateTable(element.id, element.redo);
-        } else if (element.type === ObjectType.AREA) {
-          updateArea(element.id, element.redo);
-        } else if (element.type === ObjectType.NOTE) {
-          updateNote(element.id, element.redo);
-        }
-      }
-      setUndoStack((prev) => [...prev, a]);
-      return;
-    }
-
-    if (a.action === Action.ADD) {
-      if (a.element === ObjectType.TABLE) {
-        addTable(a.data, false);
-      } else if (a.element === ObjectType.AREA) {
-        addArea(a.data, false);
-      } else if (a.element === ObjectType.NOTE) {
-        addNote(a.data, false);
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        addRelationship(a.data, false);
-      } else if (a.element === ObjectType.TYPE) {
-        addType(a.data, false);
-      } else if (a.element === ObjectType.ENUM) {
-        addEnum(a.data, false);
-      }
-      setUndoStack((prev) => [...prev, a]);
-    } else if (a.action === Action.MOVE) {
-      if (a.element === ObjectType.TABLE) {
-        const { x, y } = tables.find((t) => t.id == a.id);
-        setUndoStack((prev) => [...prev, { ...a, x, y }]);
-        updateTable(a.id, { x: a.x, y: a.y });
-      } else if (a.element === ObjectType.AREA) {
-        setUndoStack((prev) => [
-          ...prev,
-          { ...a, x: areas[a.id].x, y: areas[a.id].y },
-        ]);
-        updateArea(a.id, { x: a.x, y: a.y });
-      } else if (a.element === ObjectType.NOTE) {
-        setUndoStack((prev) => [
-          ...prev,
-          { ...a, x: notes[a.id].x, y: notes[a.id].y },
-        ]);
-        updateNote(a.id, { x: a.x, y: a.y });
-      }
-    } else if (a.action === Action.DELETE) {
-      if (a.element === ObjectType.TABLE) {
-        deleteTable(a.data.table.id, false);
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        deleteRelationship(a.data.relationship.id, false);
-      } else if (a.element === ObjectType.NOTE) {
-        deleteNote(a.data.id, false);
-      } else if (a.element === ObjectType.AREA) {
-        deleteArea(a.data.id, false);
-      } else if (a.element === ObjectType.TYPE) {
-        deleteType(a.data.type.id, false);
-      } else if (a.element === ObjectType.ENUM) {
-        deleteEnum(a.data.enum.id, false);
-      }
-      setUndoStack((prev) => [...prev, a]);
-    } else if (a.action === Action.EDIT) {
-      if (a.element === ObjectType.AREA) {
-        updateArea(a.aid, a.redo);
-      } else if (a.element === ObjectType.NOTE) {
-        updateNote(a.nid, a.redo);
-      } else if (a.element === ObjectType.TABLE) {
-        const table = tables.find((t) => t.id === a.tid);
-        if (a.component === "field") {
-          updateField(a.tid, a.fid, a.redo);
-        } else if (a.component === "field_delete") {
-          deleteField(a.data.field, a.tid, false);
-        } else if (a.component === "field_add") {
-          updateTable(a.tid, {
-            fields: [
-              ...table.fields,
-              {
-                name: "",
-                type: "",
-                default: "",
-                check: "",
-                primary: false,
-                unique: false,
-                notNull: false,
-                increment: false,
-                comment: "",
-                id: nanoid(),
-              },
-            ],
-          });
-        } else if (a.component === "index_add") {
-          updateTable(a.tid, {
-            indices: [
-              ...table.indices,
-              {
-                id: table.indices.length,
-                name: `index_${table.indices.length}`,
-                fields: [],
-              },
-            ],
-          });
-        } else if (a.component === "index") {
-          updateTable(a.tid, {
-            indices: table.indices.map((index) =>
-              index.id === a.iid
-                ? {
-                    ...index,
-                    ...a.redo,
-                  }
-                : index,
-            ),
-          });
-        } else if (a.component === "index_delete") {
-          updateTable(a.tid, {
-            indices: table.indices
-              .filter((e) => e.id !== a.data.id)
-              .map((t, i) => ({ ...t, id: i })),
-          });
-        } else if (a.component === "unique_constraint_add") {
-          const constraints = table.uniqueConstraints || [];
-          updateTable(a.tid, {
-            uniqueConstraints: [
-              ...constraints,
-              {
-                id: constraints.length,
-                name: `${table.name}_unique_${constraints.length}`,
-                fields: [],
-              },
-            ],
-          });
-        } else if (a.component === "unique_constraint") {
-          updateTable(a.tid, {
-            uniqueConstraints: (table.uniqueConstraints || []).map(
-              (constraint) =>
-                constraint.id === a.cid
-                  ? {
-                      ...constraint,
-                      ...a.redo,
-                    }
-                  : constraint,
-            ),
-          });
-        } else if (a.component === "unique_constraint_delete") {
-          updateTable(a.tid, {
-            uniqueConstraints: (table.uniqueConstraints || [])
-              .filter((e) => e.id !== a.data.id)
-              .map((t, i) => ({ ...t, id: i })),
-          });
-        } else if (a.component === "self") {
-          updateTable(a.tid, a.redo);
-        }
-      } else if (a.element === ObjectType.RELATIONSHIP) {
-        updateRelationship(a.rid, a.redo);
-      } else if (a.element === ObjectType.TYPE) {
-        if (a.component === "field_add") {
-          const type = types.find((t, i) =>
-            typeof a.tid === "number" ? i === a.tid : t.id === a.tid,
-          );
-          updateType(a.tid, {
-            fields: [...type.fields, a.data.field],
-          });
-        } else if (a.component === "field") {
-          updateType(a.tid, {
-            fields: types[a.tid].fields.map((e, i) =>
-              i === a.fid ? { ...e, ...a.redo } : e,
-            ),
-          });
-        } else if (a.component === "field_delete") {
-          updateType(a.tid, {
-            fields: types[a.tid].fields.filter((field, i) => i !== a.fid),
-          });
-        } else if (a.component === "self") {
-          updateType(a.tid, a.redo);
-          if (a.updatedFields) {
-            if (a.redo.name) {
-              a.updatedFields.forEach((x) =>
-                updateField(x.tid, x.fid, { type: a.redo.name.toUpperCase() }),
-              );
-            }
-          }
-        }
-      } else if (a.element === ObjectType.ENUM) {
-        updateEnum(a.id, a.redo);
-        if (a.updatedFields) {
-          if (a.redo.name) {
-            a.updatedFields.forEach((x) =>
-              updateField(x.tid, x.fid, { type: a.redo.name.toUpperCase() }),
-            );
-          }
-        }
-      }
-      setUndoStack((prev) => [...prev, a]);
-    }
+    const entry = redoStack[redoStack.length - 1];
+    setRedoStack((prev) => prev.filter((_, i) => i !== prev.length - 1));
+    applyHistoryEntry(entry, "redo", historyApi());
   };
 
   const fileImport = () => setModal(MODAL.IMPORT);
@@ -832,17 +491,46 @@ export default function ControlPanel({
     setLayout((prev) => ({ ...prev, dbmlEditor: !prev.dbmlEditor }));
   };
   // Same layered layout the MCP server uses (FK hierarchy, height-aware).
-  // Bulk position change like list reordering: not added to the undo stack.
+  //
+  // This moves every table at once and the result is saved immediately, so it
+  // has to be undoable: without an entry the previous layout is gone for good,
+  // and Ctrl+Z instead replays whatever entry was underneath — against
+  // coordinates that no longer describe the diagram. Recorded as the same bulk
+  // MOVE entry a marquee drag produces, so it goes through the reducer path
+  // that already exists rather than a special case.
   const autoArrange = () => {
     if (layout.readOnly) return;
-    setTables(
-      layoutTables(
-        structuredClone(tables),
-        relationships,
-        settings.tableWidth,
-        (t) => getRequiredTableWidth(t, database, settings),
-      ),
+    const arranged = layoutTables(
+      structuredClone(tables),
+      relationships,
+      settings.tableWidth,
+      (t) => getRequiredTableWidth(t, database, settings),
     );
+    const moved = arranged.reduce((acc, next) => {
+      const before = tables.find((t) => t.id === next.id);
+      if (before && (before.x !== next.x || before.y !== next.y)) {
+        acc.push({
+          id: next.id,
+          type: ObjectType.TABLE,
+          undo: { x: before.x, y: before.y },
+          redo: { x: next.x, y: next.y },
+        });
+      }
+      return acc;
+    }, []);
+    if (moved.length) {
+      setUndoStack((prev) => [
+        ...prev,
+        {
+          action: Action.MOVE,
+          bulk: true,
+          message: t("auto_arrange"),
+          elements: moved,
+        },
+      ]);
+      setRedoStack([]);
+    }
+    setTables(arranged);
     setSaveState(State.SAVING);
   };
   const save = async () => {

@@ -89,6 +89,10 @@ export default function ToolSwitch() {
           type="button"
           className={`tsw-tool${tool === id ? " is-active" : ""}`}
           aria-pressed={tool === id}
+          // Below 1240px the switch is a vertical icon strip and .tsw-label is
+          // hidden, so the accessible name has to come from here rather than
+          // from the button's text.
+          aria-label={t(label)}
           title={`${t(label)} — ${shortcut}`}
           onClick={() => setTool(id)}
         >

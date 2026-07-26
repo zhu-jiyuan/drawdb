@@ -51,16 +51,41 @@ const SKETCH_STACK =
 let ctx = null;
 let ctxFontKey = "";
 
+// measureText is the real per-frame cost in this file: Relationship.jsx
+// re-measures both endpoints of every relationship on every drag frame, so a
+// 50-table diagram runs ~1550 measurements per frame (4ms in WebKit) for text
+// that has not changed. The same string in the same font always has the same
+// width, so cache it — mirroring commentHeightCache in utils.js. Bounded and
+// FIFO-evicted so a long editing session cannot grow it without limit.
+const measureCache = new Map();
+const MEASURE_CACHE_LIMIT = 4000;
+
+// Before the webfonts resolve, measureText answers with fallback metrics. Those
+// answers are cached under the same key as the post-swap ones, so without this
+// every card measured during the swap window would stay wrong for the whole
+// session — a fresh bug traded for the one the cache fixes.
+if (typeof document !== "undefined" && document.fonts) {
+  document.fonts.ready.then(() => measureCache.clear());
+}
+
 function measure(text, weight, family, size = FONT_SIZE) {
   if (!text) return 0;
   if (typeof document === "undefined") return String(text).length * 8;
+  const cacheKey = `${weight}|${size}|${family}|${text}`;
+  const cached = measureCache.get(cacheKey);
+  if (cached !== undefined) return cached;
   if (!ctx) ctx = document.createElement("canvas").getContext("2d");
   const key = `${weight} ${size}px ${family}`;
   if (ctxFontKey !== key) {
     ctx.font = key;
     ctxFontKey = key;
   }
-  return ctx.measureText(String(text)).width;
+  const width = ctx.measureText(String(text)).width;
+  if (measureCache.size >= MEASURE_CACHE_LIMIT) {
+    measureCache.delete(measureCache.keys().next().value);
+  }
+  measureCache.set(cacheKey, width);
+  return width;
 }
 
 function canvasFontFamily(sketchMode) {

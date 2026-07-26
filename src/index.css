@@ -748,18 +748,109 @@ foreignObject .field-type {
 }
 
 /* Phones show the icon only — the label and keys would crowd the title out.
-   The icon alone would leave a 36x28 hit area, so hold the tap target at 40px. */
-@media (max-width: 700px) {
-  .palette-trigger {
-    min-width: 40px;
-    min-height: 40px;
-    padding: 5px 9px;
-    justify-content: center;
+   The icon alone would leave a 36x28 hit area, so hold the tap target at 40px.
+   Keyed off the regime rather than a max-width literal, along with every other
+   breakpoint in this file (see the layout regime tokens). */
+:root[data-layout="sheet"] .palette-trigger {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 5px 9px;
+  justify-content: center;
+}
+
+:root[data-layout="sheet"] .palette-trigger-label,
+:root[data-layout="sheet"] .palette-trigger .palette-key {
+  display: none;
+}
+
+/* ── Layout regime tokens ───────────────────────────────────────────────────
+   Every number the floating chrome is positioned from lives here, and every
+   rule that positions it keys off :root[data-layout="sheet|rail|desktop"],
+   stamped by src/layout/regime.js. There is deliberately not one breakpoint
+   literal left in the CSS: the two that used to exist — @media (max-width:700px)
+   here and in styles/islands.css / styles/toolswitch.css, against
+   window.innerWidth >= 768 in Canvas.jsx — are what produced bug A1, where a
+   rotated iPhone (844x390) and the whole 701–767px band fell between the gates
+   and got neither layout.
+
+   The margins are max(12px, env(safe-area-inset-*)) so a notched phone in
+   landscape clears its 44px inset instead of hiding chrome under it. Playwright
+   reports the insets as 0, so the harness measures the 12px floor.
+
+   svh, not vh or dvh: vh is the iOS bug that hides content under the URL bar;
+   dvh would resize the sheet — and therefore move the zoom island, which is
+   anchored to it — every time that bar collapses. svh sizes once for the worst
+   case, so the chrome never jitters. */
+:root {
+  --m-top: max(12px, env(safe-area-inset-top));
+  --m-right: max(12px, env(safe-area-inset-right));
+  --m-bottom: max(12px, env(safe-area-inset-bottom));
+  --m-left: max(12px, env(safe-area-inset-left));
+  --isl-gap: 12px; /* minimum clearance between any two chrome boxes */
+  --doc-h: 54px; /* measured intrinsic height of .island.doc */
+  --zoom-h: 46px; /* measured intrinsic height of .island.zoom */
+  --zoom-w: 217px; /* measured intrinsic width of .island.zoom */
+  --cloud-h: 26px; /* measured intrinsic height of .cloud-status */
+  --swh-h: 60px; /* horizontal .tool-switch, declared max (measured 57) */
+  --swv-w: 52px; /* vertical .tool-switch: 6px padding + 40px button + 6px */
+  --rail-w: clamp(288px, 42vw, 352px);
+  --top-cluster: calc(var(--m-top) + var(--doc-h) + 8px + var(--swh-h));
+  --zoom-band: calc(var(--zoom-h) + var(--isl-gap));
+  --cloud-band: calc(var(--cloud-h) + var(--isl-gap));
+  --sheet-cap: min(
+    62svh,
+    calc(
+      100svh - var(--top-cluster) - var(--zoom-band) - var(--cloud-band) -
+        var(--isl-gap)
+    )
+  );
+  /* The sheet's *measured* height, written to this element by the
+     ResizeObserver in Inspector.jsx and reset to 0px when no sheet is mounted.
+     Its initial value is the provable upper bound, so even before the observer's
+     first callback the zoom island is placed as if the sheet were maximal and
+     can never be buried for a frame. */
+  --sheet-h: var(--sheet-cap);
+  /* The chrome insets each regime declares, in screen px. Canvas.jsx fits
+     content into the canvas rect shrunk by these, so "fitted" cannot mean
+     "tucked under an island". */
+  --safe-top: 0px;
+  --safe-right: 0px;
+  --safe-bottom: 0px;
+  --safe-left: 0px;
+}
+
+@supports not (height: 100svh) {
+  :root {
+    --sheet-cap: min(
+      62vh,
+      calc(
+        100vh - var(--top-cluster) - var(--zoom-band) - var(--cloud-band) -
+          var(--isl-gap)
+      )
+    );
   }
-  .palette-trigger-label,
-  .palette-trigger .palette-key {
-    display: none;
-  }
+}
+
+:root[data-layout="desktop"] {
+  --m-top: max(16px, env(safe-area-inset-top));
+  --m-right: max(16px, env(safe-area-inset-right));
+  --m-bottom: max(16px, env(safe-area-inset-bottom));
+  --m-left: max(16px, env(safe-area-inset-left));
+  --sheet-h: 0px;
+  --safe-top: calc(var(--m-top) + 62px + var(--isl-gap));
+}
+
+:root[data-layout="rail"] {
+  --sheet-h: 0px;
+  --safe-top: calc(var(--m-top) + var(--doc-h) + var(--isl-gap));
+  --safe-left: calc(var(--m-left) + var(--swv-w) + var(--isl-gap));
+  --safe-right: calc(var(--m-right) + var(--rail-w) + var(--isl-gap));
+  --safe-bottom: calc(var(--m-bottom) + var(--zoom-h) + var(--isl-gap));
+}
+
+:root[data-layout="sheet"] {
+  --safe-top: var(--top-cluster);
+  --safe-bottom: calc(var(--sheet-h) + var(--zoom-band) + var(--cloud-band));
 }
 
 /* ── Selection inspector ────────────────────────────────────────────────────
@@ -773,7 +864,12 @@ foreignObject .field-type {
   top: 16px;
   bottom: 16px;
   width: 352px;
-  z-index: 25;
+  /* 20, not 25, and the same as every island: once the geometry is provably
+     disjoint (see the per-regime blocks below) stacking is not load-bearing, and
+     demoting this means a future overlap regression shows up as a visible
+     collision instead of silently eating the doc island's buttons — which is
+     exactly how A1 stayed invisible. */
+  z-index: 20;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -967,6 +1063,45 @@ select.sel {
   color: var(--canvas-ink2);
 }
 
+/* Touch platforms zoom the viewport when a focused field is under 16px — the
+   same rule .palette-input already honours (see the comment at its phone
+   block). Semi's own defaults (.semi-input-default / .semi-input-textarea) are
+   14px, so the override has to reach them too, not just our own fields: every
+   <Input>/<TextArea>/<InputNumber> in the app is 14px unless size="large", and
+   several of them (area name, relationship name/label, the tables filter) are
+   reachable inside the phone sheet.
+
+   The gate is (hover: none) and (pointer: coarse) — "the primary input is a
+   finger and nothing hovers", which is exactly the population whose browser
+   auto-zooms. NOT a max-width query: (max-width: 700px) is false at 844x390, so
+   a rotated iPhone would keep its 13px fields — that is bug A1 reproduced in a
+   different rule. NOT (any-pointer: coarse) either, which is true of any
+   desktop with a touchscreen attached.
+
+   Semi's rules sit at byte 74562 of the bundle and ours at ~428712, so equal
+   specificity already resolves in our favour — no !important needed. But
+   select.sel (0,1,1) has to be named explicitly; the bare .sel (0,1,0) cannot
+   beat it. .sel-static is a <span>, not a control, so it is excluded. */
+@media (hover: none) and (pointer: coarse) {
+  .f input,
+  .f textarea,
+  .sel,
+  select.sel,
+  .semi-input,
+  .semi-input-textarea,
+  .editor-input,
+  .link-editor .link-input,
+  .toolbar select.toolbar-item {
+    font-size: 16px;
+  }
+
+  /* the caret art in select.sel is positioned from the top edge, and the
+     control grows 29.75 -> 34.72px, so re-centre it */
+  select.sel {
+    background-position: calc(100% - 14px) 13px, calc(100% - 9px) 13px;
+  }
+}
+
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1138,45 +1273,76 @@ select.sel {
   color: var(--uq-ink);
 }
 
-/* Phones: the same panel becomes a bottom sheet, as in the mobile design —
-   a 352px rail on a 390px screen is not a rail, it is the whole screen. */
-@media (max-width: 700px) {
-  .inspector {
-    left: 0;
-    right: 0;
-    top: auto;
-    bottom: 0;
-    width: auto;
-    max-height: 62vh;
-    border-radius: 16px 16px 0 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
-    box-shadow: 0 -6px 24px rgba(20, 20, 40, 0.16);
-    animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
+/* desktop — the approved layout, unchanged in geometry: a 352px rail inset 16px
+   on all four sides. Written out per regime only so the numbers come from the
+   shared tokens instead of being repeated. */
+:root[data-layout="desktop"] .inspector {
+  top: var(--m-top);
+  bottom: var(--m-bottom);
+  right: var(--m-right);
+  left: auto;
+  width: 352px;
+  height: auto;
+  max-height: none;
+}
 
-  /* the grabber the design shows at the top of the sheet */
-  .inspector::before {
-    content: "";
-    position: absolute;
-    top: 7px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 46px;
-    height: 4px;
-    border-radius: 2px;
-    background: var(--insp-line);
-    z-index: 1;
-  }
+/* rail — 640px up to desktop. Landscape phones, tablets and short windows land
+   here. The rail narrows with the viewport instead of flipping to a sheet: a
+   wide-short viewport's scarce axis is its height, and a bottom sheet eats
+   exactly that. clamp(288px, 42vw, 352px) keeps >=328px of canvas at 640px wide,
+   which is what sets RAIL_MIN_W. */
+:root[data-layout="rail"] .inspector {
+  top: var(--m-top);
+  bottom: var(--m-bottom);
+  right: var(--m-right);
+  left: auto;
+  width: var(--rail-w);
+  height: auto;
+  max-height: none;
+  border-radius: 14px;
+}
 
-  .insp-scroll {
-    padding-top: 8px;
-  }
+/* sheet — under 640px. The same panel becomes a bottom sheet, as in the mobile
+   design: a 352px rail on a 390px screen is not a rail, it is the whole screen.
+   max-height, not height, so a short selection does not leave dead air; the cap
+   is derived so that the sheet's top edge always sits >=12px below the zoom
+   island (see the proof on .island.zoom in styles/islands.css). */
+:root[data-layout="sheet"] .inspector {
+  left: 0;
+  right: 0;
+  top: auto;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  max-height: var(--sheet-cap);
+  border-radius: 16px 16px 0 0;
+  border-left: none;
+  border-right: none;
+  border-bottom: none;
+  box-shadow: 0 -6px 24px rgba(20, 20, 40, 0.16);
+  animation: sheet-up 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
 
-  .ititle {
-    font-size: 22px;
-  }
+/* the grabber the design shows at the top of the sheet */
+:root[data-layout="sheet"] .inspector::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--insp-line);
+  z-index: 1;
+}
+
+:root[data-layout="sheet"] .insp-scroll {
+  padding-top: 8px;
+}
+
+:root[data-layout="sheet"] .ititle {
+  font-size: 22px;
 }
 
 @keyframes sheet-up {
@@ -1207,19 +1373,19 @@ select.sel {
    clientWidth and the last five buttons (auto-arrange, save, versions, theme)
    simply sat off-screen with no way to reach them. Giving the row max-content
    width is what actually lets the strip scroll. */
-@media (max-width: 700px) {
-  .editor-toolbar {
-    left: 8px;
-    right: 8px;
-    max-width: none;
-    transform: none;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .editor-toolbar::-webkit-scrollbar {
-    display: none;
-  }
-  .editor-toolbar > div {
-    width: max-content;
-  }
+:root[data-layout="sheet"] .editor-toolbar {
+  left: 8px;
+  right: 8px;
+  max-width: none;
+  transform: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+:root[data-layout="sheet"] .editor-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+:root[data-layout="sheet"] .editor-toolbar > div {
+  width: max-content;
 }

@@ -146,19 +146,148 @@
   filter: brightness(1.06);
 }
 
-/* Phones: the doc island spans the width, and the zoom island steps aside for
-   the tool switch and the bottom sheet. */
-@media (max-width: 700px) {
-  .island.doc {
-    left: 10px;
-    right: 10px;
-    top: 10px;
-  }
-  .island.zoom {
-    left: 10px;
-    bottom: 10px;
-  }
-  .isl-name {
-    font-size: 16px;
+/* The cloud sync status / account pill (src/cloud/CloudOverlay.jsx) — the fifth
+   floating box, and the one the layout audit caught covering the zoom island.
+   `fixed`, not `absolute`: its offsetParent overflows the viewport, which is why
+   its old `md:bottom-24` desktop nudge resolved 84px lower than intended. */
+.cloud-status {
+  position: fixed;
+  z-index: 20;
+}
+
+/* ── Per-regime placement ───────────────────────────────────────────────────
+   The tokens and the regime contract live in src/index.css and
+   src/layout/regime.js. Nothing below names a viewport width.
+
+   desktop (>=1240px): the approved layout. The one change from the baseline is
+   the doc island's cap: `calc(100vw - 32px)` let a long enough diagram title
+   grow the island under the top-centre switch even at 1440px — the baseline only
+   measured 377-379px because of the fixture's title. `50vw - 240px` against the
+   switch's 424px cap makes the 12px gap hold for every width and every title
+   (the title ellipsises instead; the no-ellipsis rule is about field names and
+   types, not the document title). At 1440x900 the boxes are byte-identical to
+   the clean baseline. */
+:root[data-layout="desktop"] .island.doc {
+  top: var(--m-top);
+  left: var(--m-left);
+  right: auto;
+  max-width: calc(50vw - 240px);
+}
+
+:root[data-layout="desktop"] .island.zoom {
+  left: var(--m-left);
+  bottom: var(--m-bottom);
+}
+
+:root[data-layout="desktop"] .cloud-status {
+  left: var(--m-left);
+  bottom: calc(var(--m-bottom) + var(--zoom-h) + var(--isl-gap));
+}
+
+/* rail (640–1239px): landscape phones, tablets, short windows. The doc island's
+   cap IS railLeft - docLeft - gap, so the 12px clearance from the inspector rail
+   is definitional at any title length rather than tuned. */
+:root[data-layout="rail"] .island.doc {
+  top: var(--m-top);
+  left: var(--m-left);
+  right: auto;
+  max-width: calc(
+    100vw - var(--m-left) - var(--m-right) - var(--rail-w) - var(--isl-gap)
+  );
+}
+
+:root[data-layout="rail"] .island.zoom {
+  left: var(--m-left);
+  bottom: var(--m-bottom);
+}
+
+/* Beside the zoom island rather than above it — the one regime where the cloud
+   pill does not stack. Landscape has no vertical room for a fifth band: at
+   844x390 the leading column already spends 54 (doc) + 220 (vertical switch) +
+   46 (zoom) + 3 gaps = 356 of 390-24 usable px, so adding 26 + 12 overflows, and
+   pushing the switch's max-height down to fit would leave it scrolling five
+   tools through 174px. The bottom row has the width to spare instead. The
+   max-width is derived so the pill can never cross the 12px gap to the
+   inspector rail, at any status label: it ellipsises rather than collides, which
+   for a sync-status readout is the right way to run out of room. */
+:root[data-layout="rail"] .cloud-status {
+  left: calc(var(--m-left) + var(--zoom-w) + var(--isl-gap));
+  bottom: var(--m-bottom);
+  max-width: calc(
+    100vw - var(--m-left) - var(--zoom-w) - var(--isl-gap) - var(--isl-gap) -
+      var(--rail-w) - var(--m-right)
+  );
+  overflow: hidden;
+}
+
+/* sheet (<640px): the doc island spans the width — vertically disjoint from
+   everything else, so spanning costs nothing — and the zoom island rides above
+   the bottom sheet.
+
+   That last line is bug A2. The sheet used to cover .island.zoom by 9982px²;
+   elementFromPoint at the island's centre returned an inspector row, so zoom,
+   undo and redo were untappable for as long as anything was selected. Anchoring
+   `bottom` to the sheet's measured height fixes it by geometry rather than by
+   z-index: the two boxes do not intersect at all, so there is nothing to shadow
+   the hit test.
+
+   Proof that the 12px never closes, symbolically in the viewport height H and
+   the safe-area insets t/b — this is what makes the fix structural instead of
+   tuned. The bottom-left column, top to bottom, is: cloud pill (26), zoom island
+   (46), sheet, with --isl-gap between each. With s = --sheet-h:
+     s <= --sheet-cap <= H - (t + 122) - 58 - 38 - 12, so the sheet's top edge
+     H - s >= t + 230;
+     the zoom island occupies y in [H-s-58, H-s-12], so its top edge is
+     >= t + 172, and the cloud pill's is >= t + 134, against the switch's bottom
+     edge at t + 122 -> >=12px clear;
+     the zoom island's bottom edge sits exactly --isl-gap above the sheet's top
+     edge -> the intersection is zero.
+   None of that depends on H, on t, or on the notch. The binding term on a real
+   phone is 62svh, not this one — 390x664 caps at 411.7px either way — so the
+   cloud band costs nothing where it matters and only shows up on a viewport as
+   short as 320x480, where the cap tightens 276 -> 238.
+
+   Alternatives weighed against "the user is mid-edit and wants to zoom out to
+   see context": hiding the island while the sheet is open fails outright, since
+   it forces closing the panel the user is trying to keep; merging it into the
+   sheet header needs a second home for the no-selection case, so one control
+   would live in two places depending on selection state (and undo/redo are not
+   selection-scoped anyway); docking to the opposite corner does not help because
+   the sheet is full-width, and top-right collides with the doc island at every
+   phone size. Hoisting keeps the same corner, the same button order and the same
+   thumb zone, and visually anchors the sheet. Its one cost is that it translates
+   when the sheet opens, hence the transition — matched to sheet-up, and dropped
+   under prefers-reduced-motion. The sheet animates on `transform`, so its
+   contentRect is final from frame 0 and the two move together. */
+:root[data-layout="sheet"] .island.doc {
+  top: var(--m-top);
+  left: var(--m-left);
+  right: var(--m-right);
+  max-width: none;
+}
+
+:root[data-layout="sheet"] .island.zoom {
+  left: var(--m-left);
+  bottom: max(var(--m-bottom), calc(var(--sheet-h) + var(--isl-gap)));
+  transition: bottom 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-layout="sheet"] .cloud-status {
+  left: var(--m-left);
+  bottom: calc(
+    max(var(--m-bottom), calc(var(--sheet-h) + var(--isl-gap))) +
+      var(--zoom-h) + var(--isl-gap)
+  );
+  transition: bottom 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+:root[data-layout="sheet"] .isl-name {
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-layout="sheet"] .island.zoom,
+  :root[data-layout="sheet"] .cloud-status {
+    transition: none;
   }
 }

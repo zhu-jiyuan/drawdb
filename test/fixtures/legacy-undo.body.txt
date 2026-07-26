@@ -1,0 +1,197 @@
+    if (undoStack.length === 0) return;
+    const a = undoStack[undoStack.length - 1];
+    setUndoStack((prev) => prev.filter((_, i) => i !== prev.length - 1));
+
+    if (a.bulk) {
+      for (const element of a.elements) {
+        if (element.type === ObjectType.TABLE) {
+          updateTable(element.id, element.undo);
+        } else if (element.type === ObjectType.AREA) {
+          updateArea(element.id, element.undo);
+        } else if (element.type === ObjectType.NOTE) {
+          updateNote(element.id, element.undo);
+        }
+      }
+      setRedoStack((prev) => [...prev, a]);
+      return;
+    }
+
+    if (a.action === Action.ADD) {
+      if (a.element === ObjectType.TABLE) {
+        deleteTable(a.data.table.id, false);
+      } else if (a.element === ObjectType.AREA) {
+        deleteArea(areas[areas.length - 1].id, false);
+      } else if (a.element === ObjectType.NOTE) {
+        deleteNote(notes[notes.length - 1].id, false);
+      } else if (a.element === ObjectType.RELATIONSHIP) {
+        deleteRelationship(a.data.relationship.id, false);
+      } else if (a.element === ObjectType.TYPE) {
+        deleteType(a.data.type.id, false);
+      } else if (a.element === ObjectType.ENUM) {
+        deleteEnum(a.data.enum.id, false);
+      }
+      setRedoStack((prev) => [...prev, a]);
+    } else if (a.action === Action.MOVE) {
+      if (a.element === ObjectType.TABLE) {
+        const { x, y } = tables.find((t) => t.id === a.id);
+        setRedoStack((prev) => [...prev, { ...a, x, y }]);
+        updateTable(a.id, { x: a.x, y: a.y });
+      } else if (a.element === ObjectType.AREA) {
+        setRedoStack((prev) => [
+          ...prev,
+          { ...a, x: areas[a.id].x, y: areas[a.id].y },
+        ]);
+        updateArea(a.id, { x: a.x, y: a.y });
+      } else if (a.element === ObjectType.NOTE) {
+        setRedoStack((prev) => [
+          ...prev,
+          { ...a, x: notes[a.id].x, y: notes[a.id].y },
+        ]);
+        updateNote(a.id, { x: a.x, y: a.y });
+      }
+    } else if (a.action === Action.DELETE) {
+      if (a.element === ObjectType.TABLE) {
+        a.data.relationship.forEach((x) => addRelationship(x, false));
+        addTable(a.data, false);
+      } else if (a.element === ObjectType.RELATIONSHIP) {
+        addRelationship(a.data, false);
+      } else if (a.element === ObjectType.NOTE) {
+        addNote(a.data, false);
+      } else if (a.element === ObjectType.AREA) {
+        addArea(a.data, false);
+      } else if (a.element === ObjectType.TYPE) {
+        addType(a.data, false);
+      } else if (a.element === ObjectType.ENUM) {
+        addEnum(a.data, false);
+      }
+      setRedoStack((prev) => [...prev, a]);
+    } else if (a.action === Action.EDIT) {
+      if (a.element === ObjectType.AREA) {
+        updateArea(a.aid, a.undo);
+      } else if (a.element === ObjectType.NOTE) {
+        updateNote(a.nid, a.undo);
+      } else if (a.element === ObjectType.TABLE) {
+        const table = tables.find((t) => t.id === a.tid);
+        if (a.component === "field") {
+          updateField(a.tid, a.fid, a.undo);
+        } else if (a.component === "field_delete") {
+          setRelationships((prev) => {
+            let temp = [...prev];
+            a.data.relationship.forEach((r) => {
+              temp.splice(r.id, 0, r);
+            });
+            return temp;
+          });
+          const updatedFields = table.fields.slice();
+          updatedFields.splice(a.data.index, 0, a.data.field);
+          updateTable(a.tid, { fields: updatedFields });
+        } else if (a.component === "field_add") {
+          updateTable(a.tid, {
+            fields: table.fields.filter((e) => e.id !== a.fid),
+          });
+        } else if (a.component === "index_add") {
+          updateTable(a.tid, {
+            indices: table.indices
+              .filter((e) => e.id !== table.indices.length - 1)
+              .map((t, i) => ({ ...t, id: i })),
+          });
+        } else if (a.component === "index") {
+          updateTable(a.tid, {
+            indices: table.indices.map((index) =>
+              index.id === a.iid
+                ? {
+                    ...index,
+                    ...a.undo,
+                  }
+                : index,
+            ),
+          });
+        } else if (a.component === "index_delete") {
+          const updatedIndices = table.indices.slice();
+          updatedIndices.splice(a.data.id, 0, a.data);
+          updateTable(a.tid, {
+            indices: updatedIndices.map((t, i) => ({ ...t, id: i })),
+          });
+        } else if (a.component === "unique_constraint_add") {
+          const constraints = table.uniqueConstraints || [];
+          updateTable(a.tid, {
+            uniqueConstraints: constraints
+              .filter((e) => e.id !== constraints.length - 1)
+              .map((t, i) => ({ ...t, id: i })),
+          });
+        } else if (a.component === "unique_constraint") {
+          updateTable(a.tid, {
+            uniqueConstraints: (table.uniqueConstraints || []).map(
+              (constraint) =>
+                constraint.id === a.cid
+                  ? {
+                      ...constraint,
+                      ...a.undo,
+                    }
+                  : constraint,
+            ),
+          });
+        } else if (a.component === "unique_constraint_delete") {
+          const updatedConstraints = (table.uniqueConstraints || []).slice();
+          updatedConstraints.splice(a.data.id, 0, a.data);
+          updateTable(a.tid, {
+            uniqueConstraints: updatedConstraints.map((t, i) => ({
+              ...t,
+              id: i,
+            })),
+          });
+        } else if (a.component === "self") {
+          updateTable(a.tid, a.undo);
+        }
+      } else if (a.element === ObjectType.RELATIONSHIP) {
+        updateRelationship(a.rid, a.undo);
+      } else if (a.element === ObjectType.TYPE) {
+        if (a.component === "field_add") {
+          const type = types.find((t, i) =>
+            typeof a.tid === "number" ? i === a.tid : t.id === a.tid,
+          );
+          updateType(a.tid, {
+            fields: type.fields.filter((f, i) =>
+              f.id ? f.id !== a.data.field.id : i !== type.fields.length - 1,
+            ),
+          });
+        }
+        if (a.component === "field") {
+          updateType(a.tid, {
+            fields: types[a.tid].fields.map((e, i) =>
+              i === a.fid ? { ...e, ...a.undo } : e,
+            ),
+          });
+        } else if (a.component === "field_delete") {
+          setTypes((prev) =>
+            prev.map((t, i) => {
+              if (i === a.tid) {
+                const temp = t.fields.slice();
+                temp.splice(a.fid, 0, a.data);
+                return { ...t, fields: temp };
+              }
+              return t;
+            }),
+          );
+        } else if (a.component === "self") {
+          updateType(a.tid, a.undo);
+          if (a.updatedFields) {
+            if (a.undo.name) {
+              a.updatedFields.forEach((x) =>
+                updateField(x.tid, x.fid, { type: a.undo.name.toUpperCase() }),
+              );
+            }
+          }
+        }
+      } else if (a.element === ObjectType.ENUM) {
+        updateEnum(a.id, a.undo);
+        if (a.updatedFields) {
+          if (a.undo.name) {
+            a.updatedFields.forEach((x) =>
+              updateField(x.tid, x.fid, { type: a.undo.name.toUpperCase() }),
+            );
+          }
+        }
+      }
+      setRedoStack((prev) => [...prev, a]);
+    }

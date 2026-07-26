@@ -7,7 +7,13 @@
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 25;
+  /* 20, level with every island. It was 25, and that is how A1 hid: at 844x390
+     the switch covered the doc island by 5864px² and elementFromPoint in the
+     overlap returned `tsw-tool is-active`, so the diagram title, the command
+     palette and Share were unreachable and nothing looked wrong. With the
+     geometry now provably disjoint in all three regimes, a future overlap shows
+     up as a visible collision instead. */
+  z-index: 20;
   display: flex;
   gap: 2px;
   padding: 6px;
@@ -85,31 +91,128 @@ body[theme-mode="dark"] .tsw-tool.is-active {
     0 0 0 4px var(--accent-wash);
 }
 
-/* Phones: the doc island owns the full width of the top edge, so the switch
-   tucks in underneath it and tightens up to fit a 360px screen. */
-@media (max-width: 700px) {
-  /* Tucks under the doc island, which owns the top edge. It used to be anchored
-     to `bottom: calc(62vh + 12px)` so as to clear the inspector's title — but
-     that was written against the layout where the sheet came down from the TOP
-     of the screen. The sheet now rises from the bottom (see .inspector below),
-     so the switch cannot collide with it up here, and 62vh was never the
-     sheet's real height anyway: `max-height: 62vh` is a cap, so a short
-     selection left 80-odd px of dead air and no selection at all left the
-     switch marooned in the middle of the canvas — 5.6% of the viewport, opaque
-     and swallowing taps, measured sitting on top of a table card's title row.
-     If it ever has to dodge the sheet again, drive it from the sheet's measured
-     height, not from a guess. */
-  .tool-switch {
-    top: 74px;
-    bottom: auto;
-    gap: 1px;
-    padding: 5px;
-    max-width: calc(100vw - 20px);
-  }
+/* ── Per-regime geometry ────────────────────────────────────────────────────
+   Tokens and the regime contract: src/index.css, src/layout/regime.js. Nothing
+   here names a viewport width.
 
-  .tsw-tool {
-    min-width: 58px;
-    padding: 6px 4px 5px;
-    font-size: 11px;
+   desktop (>=1240px): unchanged top-centre. Mouse-driven, so thumb reach is
+   irrelevant and the approved design stands. The 424px cap is what
+   DESKTOP_MIN_W is derived from. */
+:root[data-layout="desktop"] .tool-switch {
+  top: var(--m-top);
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+  max-width: 424px;
+  overflow-x: auto;
+}
+
+/* sheet (<640px): horizontal, tucked under the doc island, which owns the top
+   edge. Same position as before the fix — but now provable rather than assumed,
+   and the trade is worth stating plainly, because this is the *worst* reach on
+   the phone (roughly the top 20% of the screen).
+
+   The arithmetic leaves no alternative. The bottom row cannot hold both islands:
+   217 (zoom) + 12 + 324 (compact switch) = 553 > 375, and even an icon-only
+   switch is 217 + 12 + 210 = 439 > 375. Stacking them above the sheet costs a
+   second row and leaves ~136px of visible canvas. So the bottom-left thumb zone
+   goes to zoom/undo/redo, which are tapped continuously while reading, and mode
+   switching — once or twice per task, and also on V/T/R/N/A — takes the top.
+   Two side benefits: all chrome lands in one top cluster, leaving the lower
+   canvas drag-clean (WebKit stops delivering pointermove when a drag crosses
+   floating chrome), and marquee gestures start low where the thumb already is.
+
+   The previous version of this rule was anchored to `bottom: calc(62vh + 12px)`
+   to clear the inspector's title, written against a layout where the sheet came
+   down from the TOP of the screen; 62vh was never the sheet's real height
+   either, since max-height is a cap. It is driven from the sheet's measured
+   height now — via --sheet-h — wherever that matters, which after this change is
+   only the zoom island. */
+:root[data-layout="sheet"] .tool-switch {
+  top: calc(var(--m-top) + var(--doc-h) + 8px);
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 1px;
+  padding: 5px;
+  max-width: calc(100vw - var(--m-left) - var(--m-right));
+  max-height: var(--swh-h);
+}
+
+:root[data-layout="sheet"] .tsw-tool {
+  min-width: 58px;
+  padding: 6px 4px 5px;
+  font-size: 11px;
+}
+
+/* rail (640–1239px): a vertical icon strip on the leading edge, vertically
+   centred. This is where A1's collisions were — the horizontal switch overlapped
+   the doc island by 5864–12771px² across this whole band, and the rail by a
+   further 9165px². Going vertical vacates the top band entirely, and drops the
+   footprint from 18.5k to 52x220 = 11.4k px².
+
+   Reach is a win here rather than a trade: in landscape the hands wrap the short
+   edges, so leading-edge-at-mid-height is the thumb's natural resting arc, while
+   top-centre is the furthest point from either thumb. `left: var(--m-left)`
+   resolves through env(safe-area-inset-left), so a notched iPhone in landscape
+   clears its 44px inset instead of hiding the strip under it — Playwright reports
+   the insets as 0, so that part needs a real device to see.
+
+   Why the max-height is exactly this expression: the strip is centred, so with
+   height h its edges are (H-h)/2 and (H+h)/2. Clearing the doc island needs
+   h <= H - 2(t + --doc-h + gap); clearing the zoom island needs
+   h <= H - 2(b + --zoom-h + gap). The declared cap is the tighter of the two, so
+   both hold for every H by construction, and when five tools do not fit the strip
+   scrolls instead of growing into them.
+
+   The cost of the whole scheme is that text labels are lost below 1240px. The
+   existing title="{label} — {key}" already carries both, and ToolSwitch.jsx adds
+   an aria-label to match. */
+:root[data-layout="rail"] .tool-switch {
+  left: var(--m-left);
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+  flex-wrap: nowrap;
+  overflow-y: auto;
+  width: var(--swv-w);
+  padding: 6px;
+  gap: 2px;
+  max-width: none;
+  min-height: 44px;
+  max-height: calc(
+    100svh - 2 *
+      max(
+        calc(var(--m-top) + var(--doc-h) + var(--isl-gap)),
+        calc(var(--m-bottom) + var(--zoom-h) + var(--isl-gap))
+      )
+  );
+}
+
+@supports not (height: 100svh) {
+  :root[data-layout="rail"] .tool-switch {
+    max-height: calc(
+      100vh - 2 *
+        max(
+          calc(var(--m-top) + var(--doc-h) + var(--isl-gap)),
+          calc(var(--m-bottom) + var(--zoom-h) + var(--isl-gap))
+        )
+    );
   }
+}
+
+:root[data-layout="rail"] .tsw-tool {
+  min-width: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+}
+
+:root[data-layout="rail"] .tsw-label,
+:root[data-layout="rail"] .tsw-key {
+  display: none;
 }
